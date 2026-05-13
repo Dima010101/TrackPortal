@@ -63,8 +63,6 @@ Consultazione: Visualizzazione libera delle schede tecniche dei circuiti e degli
 
 Sistema di Prenotazione Intelligente: Validazione automatica dei requisiti (licenze/certificati) prima della conferma.
 
-Gestione Box: Algoritmo per l'assegnazione degli spazi tecnici ai piloti prenotati.
-
 Infrastruttura di Analisi: Grafici in tempo reale per monitorare interazioni e flussi finanziari.
 
 Comunicazione Integrata: Sistema di chat e messaggistica automatizzata per conferme e marketing.
