@@ -31,7 +31,7 @@ Assicurazioni: Gestione delle polizze per il rimborso totale in caso di cancella
 
 Scheduling: Organizzazione settimanale delle sessioni (Campionato, Professionisti, Amatoriali) con filtri per livello e veicolo.
 
-Logistica: Definizione prezzi, tetti massimi di partecipanti e assegnazione automatica dei box.
+Logistica: Definizione prezzi e tetti massimi di partecipanti
 
 Marketing: Invio email di conferma e campagne di fidelizzazione basate sullo storico degli utenti.
 
@@ -68,3 +68,5 @@ Gestione Box: Algoritmo per l'assegnazione degli spazi tecnici ai piloti prenota
 Infrastruttura di Analisi: Grafici in tempo reale per monitorare interazioni e flussi finanziari.
 
 Comunicazione Integrata: Sistema di chat e messaggistica automatizzata per conferme e marketing.
+
+
