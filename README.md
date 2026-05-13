@@ -1,70 +1,202 @@
-TrackPortal 🏎️🏍️
+# TrackPortal
 
-TrackPortal è una piattaforma centralizzata dedicata allo scheduling e alla gestione dei circuiti automobilistici e motociclistici. Il sistema permette di coordinare track day, sessioni per professionisti e turni amatoriali, integrando servizi di noleggio veicoli e coperture assicurative in un unico ecosistema digitale.
+Piattaforma web per la prenotazione di sessioni in pista (track day) sviluppata
+per essere eseguita su Apache con PHP/MySQL (stack XAMPP).
 
-👥 Il Gruppo
+Stack: **PHP 8 + MySQL/MariaDB + HTML + CSS + JavaScript** (vanilla), **nessuna libreria o template engine esterno** — le view sono PHP nativi inclusi da `VBase::render()`.
 
-Emanuele Brandimarte
+## Architettura
 
-Dmytro Ovachuk
+TrackPortal segue il pattern accademico **MVC + Foundation** (variante del classico
+Model-View-Controller con un livello esplicito di persistenza), modellato sullo
+stile di FillSpaceWEB. Le cartelle in minuscolo identificano lo **strato
+architetturale**; il prefisso a una lettera del nome classe identifica lo strato
+in modo ridondante e abilita un autoloader "per convenzione".
 
-Andrea Di Battista
+| Prefisso | Strato      | Cartella       | Responsabilita                                                 |
+|----------|-------------|----------------|----------------------------------------------------------------|
+| `C`      | Controller  | `controller/`  | Logica applicativa, orchestrazione Entity/Foundation/View      |
+| `E`      | Entity      | `entity/`      | Oggetti di dominio (POJO/POPO), mappano le tabelle DB          |
+| `F`      | Foundation  | `foundation/`  | DAO/persistenza, traduzione fra Entity e righe SQL             |
+| `V`      | View        | `view/`        | Assegnazione variabili e `include` dei template PHP in `public/templates/` |
 
-Riccardo Uffreduzzi
+Tutto il routing passa dal **`CFrontController`** (entry point: `index.php`):
+un URL del tipo `/<Risorsa>/<metodo>/<param1>/...` viene tradotto nella
+chiamata `C<Risorsa>::<metodo>($param1, ...)`. Gli endpoint AJAX/JSON vivono
+sotto `/api/...`.
 
+## Struttura del progetto
 
-📝 Descrizione del Progetto
-L'applicazione nasce per semplificare l'interazione tra i gestori degli impianti sportivi e i piloti (sia professionisti che amatori). TrackPortal funge da portale univoco dove è possibile consultare i calendari dei circuiti, prenotare sessioni specifiche in base alla propria categoria e gestire il noleggio dei mezzi direttamente in fase di prenotazione.
+```
+TrackPortal/
+├── .htaccess               # Front-controller rewrite + sicurezza + cache
+├── index.php               # Entry point: autoload + CFrontController
+├── trackportal.sql         # Schema DB + dati seed (importare in MySQL)
+├── seed.php                # Genera l'hash delle password degli utenti seed
+├── README.md
+│
+├── controller/             # Strato Controller
+│   ├── CFrontController.php
+│   ├── CAuth.php           CAccount.php   CAdmin.php     CCircuito.php
+│   ├── CDashboard.php      CGestore.php   CHome.php      CNoleggio.php
+│   ├── CPrenotazione.php   CRicerca.php   CSessione.php  CError.php
+│
+├── entity/                 # Strato Entity (14 classi POPO)
+│   ├── EUtente.php   EPilota.php   EGestore.php   EAziendaNoleggio.php
+│   ├── ECircuito.php ECircuitoFoto.php   ESessione.php  EVeicoloNoleggio.php
+│   ├── EPrenotazione.php   ECartaCredito.php   EFattura.php
+│   ├── EPromozione.php     EPromozioneDestinatario.php
+│   └── EParametroSistema.php   EStoricoParametro.php
+│
+├── foundation/             # Strato Foundation (DAO)
+│   ├── FDataBase.php           # Singleton PDO
+│   ├── FPersistentManager.php  # Facade store/load/delete/update/exist
+│   └── FUtente.php  FPilota.php  FGestore.php  FAziendaNoleggio.php
+│       FCircuito.php FSessione.php FVeicoloNoleggio.php FPrenotazione.php
+│       FCartaCredito.php FFattura.php FPromozione.php FParametroSistema.php
+│
+├── view/                   # Strato View (wrapper `render()` → template PHP)
+│   ├── VBase.php (astratta) VHome.php  VAuth.php  VAccount.php
+│   ├── VCircuito.php  VPrenotazione.php  VDashboard.php
+│   └── VGestore.php  VNoleggio.php  VAdmin.php  VError.php
+│
+├── public/                 # Template PHP + CSS/JS/immagini serviti dal web server
+│   ├── templates/
+│   │   ├── partials/{header,footer}.php
+│   │   ├── home.php
+│   │   ├── auth/{login,register}.php
+│   │   ├── circuits/{list,detail}.php
+│   │   ├── bookings/{list,detail,new}.php
+│   │   ├── dashboard/{pilot,manager,rental,admin}.php
+│   │   ├── account/index.php
+│   │   ├── manager/{circuits,schedule,promotions}.php
+│   │   ├── rental/fleet.php
+│   │   ├── admin/{commissions,affiliations,invoices}.php
+│   │   └── errors/{403,404}.php
+│   ├── css/style.css       # Tema scuro racing
+│   ├── js/main.js          # Comportamenti front-end
+│   └── immagini/           # Immagini caricate
+│
+├── utility/                # Helper procedurali (stile utility/ di FillSpaceWEB)
+│   ├── autoload.php        # spl_autoload_register: prima lettera -> cartella
+│   ├── config.php          # Costanti DB e applicazione
+│   └── functions.php       # e, url, money, icon, csrf, flash, ...
+│
+└── uploads/                # Upload utente (PHP non eseguibile via .htaccess)
+```
 
-👤 Tipologie di Utenti e Obiettivi
+## Mappatura URL (front controller)
 
-🛡️ Amministratore
-Monitoraggio: Supervisione del traffico, transazioni, nuovi log-in e guadagni tramite dashboard analitica.
+| URL                                                | Controller -> metodo            |
+|----------------------------------------------------|---------------------------------|
+| `/TrackPortal/`                                    | `CHome::index`                  |
+| `/TrackPortal/Auth/login`                          | `CAuth::login`                  |
+| `/TrackPortal/Auth/register`                       | `CAuth::register`               |
+| `/TrackPortal/Auth/logout` (POST + CSRF)           | `CAuth::logout`                 |
+| `/TrackPortal/Circuito/lista[?q=monza]`            | `CCircuito::lista`              |
+| `/TrackPortal/Circuito/dettaglio/<id>`             | `CCircuito::dettaglio`          |
+| `/TrackPortal/Account/index`                       | `CAccount::index`               |
+| `/TrackPortal/Prenotazione/lista`                  | `CPrenotazione::lista`          |
+| `/TrackPortal/Prenotazione/dettaglio/<id>`         | `CPrenotazione::dettaglio`      |
+| `/TrackPortal/Prenotazione/nuova/<sessione_id>`    | `CPrenotazione::nuova`          |
+| `/TrackPortal/Dashboard/{pilota,gestore,noleggio,admin}` | `CDashboard::*`           |
+| `/TrackPortal/Gestore/{circuiti,calendario/<id>,promozioni}` | `CGestore::*`         |
+| `/TrackPortal/Noleggio/flotta`                     | `CNoleggio::flotta`             |
+| `/TrackPortal/Admin/{commissioni,affiliazioni,fatture}`  | `CAdmin::*`                |
+| `/TrackPortal/api/circuiti/ricerca?q=monza`        | `CRicerca::circuiti` (JSON)     |
+| `/TrackPortal/api/sessioni/<id>`                   | `CSessione::perCircuito` (JSON) |
 
-Gestione Documentale: Modifica dei layout di fatturazione e delle schede informative.
+## Setup su XAMPP
 
-Supporto: Gestione dei report e moderazione delle chat tra aziende, circuiti e utenti.
+1. **Avvia Apache e MySQL** dal pannello XAMPP.
+2. **Importa il database** dal file `trackportal.sql`:
+   - Apri `http://localhost/phpmyadmin/`
+   - Tab "Importa" → seleziona `c:\xampp\htdocs\TrackPortal\trackportal.sql` → Esegui.
+3. **Genera le password seed** visitando una sola volta:
+   `http://localhost/TrackPortal/seed.php`
+4. Apri la home: **`http://localhost/TrackPortal/`**
 
-Assicurazioni: Gestione delle polizze per il rimborso totale in caso di cancellazione.
+## Account di test (password: `Password123!`)
 
-🏁 Gestore di Circuiti
+| Email                       | Ruolo                  |
+|-----------------------------|------------------------|
+| `admin@trackportal.test`    | Amministratore         |
+| `marco@trackportal.test`    | Pilota amatoriale      |
+| `luca@trackportal.test`     | Gestore di circuiti    |
+| `rent@trackportal.test`     | Azienda di noleggio    |
 
-Scheduling: Organizzazione settimanale delle sessioni (Campionato, Professionisti, Amatoriali) con filtri per livello e veicolo.
+Si possono creare nuovi account da **`/Auth/register`**. Le aziende
+(gestore/noleggio) restano in stato **"in attesa"** finche l'amministratore
+non approva la richiesta dalla pagina **Affiliazioni**.
 
-Logistica: Definizione prezzi e tetti massimi di partecipanti
+## Use case implementati
 
-Marketing: Invio email di conferma e campagne di fidelizzazione basate sullo storico degli utenti.
+| UC  | Funzionalita                                       | Rotta principale                                |
+|-----|----------------------------------------------------|--------------------------------------------------|
+| 1   | Prenotazione sessione                              | `/Prenotazione/nuova/<sessione_id>`              |
+| 2   | Aggiornare schedule del circuito                   | `/Gestore/calendario/<id>`                       |
+| 3   | Gestione flotta azienda di noleggio                | `/Noleggio/flotta`                               |
+| 4   | Assicurazione + percentuale di commissione         | `/Admin/commissioni`                             |
+| 6   | Visualizzazione e ricerca circuiti                 | `/`, `/Circuito/lista`                           |
+| 7   | Gestione prenotazioni e storico                    | `/Prenotazione/lista` + `/Prenotazione/dettaglio/<id>` |
+| 8   | Gestione documenti di fatturazione                 | `/Admin/fatture`                                 |
+| 9   | Gestione e aggiunta circuiti                       | `/Gestore/circuiti`                              |
+| 10  | Gestione fidelizzazioni e offerte                  | `/Gestore/promozioni`                            |
+| 11  | Gestione account                                   | `/Account/index`                                 |
+| 12  | Approvazione affiliazione                          | `/Admin/affiliazioni`                            |
 
-Business Intelligence: Dashboard dedicata all'andamento economico del circuito.
+(UC5 supporto: escluso per esame come da requisiti.)
 
-🏎️ Azienda di Noleggio
+## Mappatura UML → Entity → Tabella
 
-Affiliazione: Collegamento diretto a uno o più circuiti specifici.
+| Classe UML            | Entity (`entity/`)         | Tabella                                    |
+|-----------------------|----------------------------|--------------------------------------------|
+| Utente                | `EUtente`                  | `utente`                                   |
+| Pilota                | `EPilota`                  | `pilota` (estende `utente`)                |
+| Gestore Circuiti      | `EGestore`                 | `gestore_circuiti` (estende `utente`)      |
+| Azienda Noleggio      | `EAziendaNoleggio`         | `azienda_noleggio` (estende `utente`)      |
+| Amministratore        | `EUtente` (`ruolo=admin`)  | `utente`                                   |
+| Circuito              | `ECircuito`                | `circuito` (+ `circuito_foto`)             |
+| Sessione              | `ESessione`                | `sessione`                                 |
+| Veicolo Noleggio      | `EVeicoloNoleggio`         | `veicolo_noleggio`                         |
+| Prenotazione          | `EPrenotazione`            | `prenotazione`                             |
+| Carta di Credito      | `ECartaCredito`            | `carta_credito` (masked + cvv hashato)     |
+| Fattura               | `EFattura`                 | `fattura`                                  |
+| Promozione            | `EPromozione`              | `promozione` (+ `promozione_destinatario`) |
+| Parametro Sistema     | `EParametroSistema`        | `parametro_sistema` (+ `storico_parametro`) |
 
-Flotta: Gestione del catalogo veicoli disponibili per l'utente finale.
+## Sicurezza implementata
 
-CRM: Invio email di conferma e gestione offerte promozionali.
+- Password hashate con `password_hash` (BCRYPT).
+- Token **CSRF** su tutti i form (incluso il logout, esposto solo via POST).
+- Sessioni con cookie `HttpOnly` e `SameSite=Lax`, regenerate su login.
+- Tutte le query usano **prepared statements PDO** (nessuna concatenazione di input).
+- Output HTML escapato nei template con la funzione `e()` (`htmlspecialchars`) dove serve testo dinamico.
+- Headers di sicurezza nell'`.htaccess`: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `Content-Security-Policy`.
+- `.htaccess` blocca l'esecuzione di file PHP nella cartella `uploads/`.
+- Pagine di errore personalizzate (route `/Error/nonTrovato` e `/Error/accessoNegato`).
+- Numero carta salvato solo in formato `**** **** **** 1234`; CVV hashato.
 
-👤 Piloti (Professionisti & Amatoriali)
+## Convenzioni di sviluppo
 
-Profilazione: Registrazione con caricamento documenti (Licenza/Patente e Certificato Medico).
+- **Routing**: aggiungere una nuova rotta significa creare un nuovo metodo
+  pubblico statico su un controller esistente, oppure creare un nuovo file
+  `controller/CMioController.php`. Non occorre toccare `CFrontController` ne
+  registrare nulla altrove.
+- **Persistenza**: per accedere al DB usare `FDataBase::getInstance()` o,
+  preferibilmente, le classi `F*` che incapsulano le query e idratano le
+  `E*` corrispondenti. `FPersistentManager` espone una facade generica
+  `store/load/delete/update/exist`.
+- **Template**: file `.php` sotto `public/templates/`; usano `<?= ... ?>` e chiamano
+  direttamente gli helper in `utility/functions.php` (`e()`, `url()`, `money()`, `icon()`, …).
+- **Cartelle vs prefissi**: cartelle in **minuscolo** (`controller/`, `entity/`,
+  `foundation/`, `view/`), classi con prefisso **maiuscolo** (`CHome`, `EUtente`,
+  ...) come imposto dall'autoloader e dalle convenzioni PSR sui nomi PHP.
 
-Prenotazione: Accesso alle sessioni dedicate alla propria categoria e livello.
+## Estensioni previste (basi gia pronte)
 
-Servizi: Opzione di noleggio veicolo e sottoscrizione assicurazione integrata.
-
-Area Personale: Gestione account e visualizzazione dello storico prenotazioni.
-
-🌐 Utenti Non Registrati
-
-Consultazione: Visualizzazione libera delle schede tecniche dei circuiti e degli orari delle sessioni.
-
-🚀 Funzionalità Principali
-
-Sistema di Prenotazione Intelligente: Validazione automatica dei requisiti (licenze/certificati) prima della conferma.
-
-Infrastruttura di Analisi: Grafici in tempo reale per monitorare interazioni e flussi finanziari.
-
-Comunicazione Integrata: Sistema di chat e messaggistica automatizzata per conferme e marketing.
-
-
+- 2FA: colonne `twofa_enabled` / `twofa_secret` su `utente`.
+- Multi-valuta: colonne `valuta` su sessioni/prenotazioni/fatture.
+- Storico prezzi parametri: tabella `storico_parametro`.
+- Promozioni con codice: campo `codice` univoco su `promozione`.
+- API JSON estese sotto `/api/...` mappate dal `CFrontController`.
