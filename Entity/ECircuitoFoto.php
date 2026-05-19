@@ -2,6 +2,7 @@
 /**
  * ECircuitoFoto - foto associata a un circuito (ad un circuito possono essere associate più foto).
  */
+
 class ECircuitoFoto
 {
     protected ?int $id;
