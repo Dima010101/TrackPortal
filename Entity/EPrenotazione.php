@@ -1,3 +1,10 @@
+<?php
+
+
+/**
+ * EPrenotazione — prenotazione pilota su circuito con fascia oraria (modello UML).
+ */
+
 class EPrenotazione
 {
     protected ?int $id;
@@ -19,7 +26,7 @@ class EPrenotazione
     protected ?string $dataInserimento;
     
     public function __construct(
-        int $pilotaID = 0,
+        int $pilotaId = 0,
         int $circuitoId = 0,
         string $inizioDisponibilita = '',
         string $fineDisponibilita = '',
