@@ -1,0 +1,22 @@
+{
+    "name": "trackportal/app",
+    "description": "TrackPortal — persistenza via Doctrine ORM + DBAL",
+    "require": {
+        "php": ">=8.2",
+        "doctrine/dbal": "^4.4",
+        "doctrine/orm": "^3.6",
+        "symfony/cache": "^7.4",
+        "smarty/smarty": "^5.8"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "autoload": {
+        "classmap": [
+            "Control/",
+            "Entity/",
+            "Foundation/",
+            "View/"
+        ]
+    }
+}

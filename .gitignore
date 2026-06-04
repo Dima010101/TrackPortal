@@ -1,0 +1,13 @@
+/vendor/
+/var/
+/var/cache/
+/var/smarty/
+/composer.phar
+/.env
+/.env.local
+/.vscode/
+/.idea/
+/*.log
+Thumbs.db
+desktop.ini
+.DS_Store
