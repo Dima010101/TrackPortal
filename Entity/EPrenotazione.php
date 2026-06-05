@@ -1,6 +1,6 @@
 <?php
 /**
- * EPrenotazione — prenotazione pilota su circuito con fascia oraria (modello UML).
+ * Prenotazione pilota su un circuito.
  */
 
 class EPrenotazione
