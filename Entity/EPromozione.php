@@ -3,8 +3,7 @@
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * EPromozione — offerta proposta da un'azienda di noleggio o da un gestore di circuiti.
- * La promozione viene applicata automaticamente ai destinatari.
+ * Offerta proposta da un'azienda di noleggio o da un gestore di circuiti.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'promozione')]

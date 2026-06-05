@@ -3,7 +3,7 @@
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * EPrezzo — elemento di listino (importo, valuta) associato a un veicolo noleggiabile (UML).
+ * Elemento di listino (importo, valuta) associato a un veicolo noleggiabile.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'prezzo')]

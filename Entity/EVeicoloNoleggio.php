@@ -3,7 +3,7 @@
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * EVeicoloNoleggio — veicolo noleggiabile; il listino prezzi è gestito dalla tabella `prezzo`.
+ * Veicolo noleggiabile; il listino prezzi è gestito dalla tabella `prezzo`.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'veicolo_noleggio')]
