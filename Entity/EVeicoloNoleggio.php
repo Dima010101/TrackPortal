@@ -3,8 +3,7 @@
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * EVeicoloNoleggio — veicolo noleggiabile; il listino è nella tabella `prezzo` (UML).
- * In fase di `store`, `listinoImporto` / `listinoValuta` creano la prima voce di prezzo.
+ * EVeicoloNoleggio — veicolo noleggiabile; il listino prezzi è gestito dalla tabella `prezzo`.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'veicolo_noleggio')]
@@ -45,17 +44,11 @@ class EVeicoloNoleggio
     #[ORM\Column(name: 'disponibile', type: 'boolean')]
     protected bool $disponibile;
 
-    /** Usato solo in persistenza (prima riga listino), non mappato su DB. */
-    protected float $listinoImporto;
-
-    protected string $listinoValuta;
-
     public function __construct(
         int $aziendaId = 0, int $circuitoId = 0, string $targa = '',
         string $categoria = 'auto', int $capienza = 1, ?int $potenzaCv = null,
         ?int $anno = null, ?string $marca = null, ?string $modello = null,
-        bool $disponibile = true, float $listinoImporto = 0.0,
-        string $listinoValuta = 'EUR', ?int $id = null
+        bool $disponibile = true, ?int $id = null
     ) {
         $this->id            = $id;
         $this->aziendaId     = $aziendaId;
@@ -68,14 +61,10 @@ class EVeicoloNoleggio
         $this->marca         = $marca;
         $this->modello       = $modello;
         $this->disponibile   = $disponibile;
-        $this->listinoImporto = $listinoImporto;
-        $this->listinoValuta = $listinoValuta;
     }
 
     public static function fromArray(array $r): self
     {
-        $importo = (float)($r['listino_importo'] ?? $r['prezzo_importo_listino'] ?? 0.0);
-        $valuta  = (string)($r['listino_valuta'] ?? 'EUR');
         return new self(
             (int)($r['azienda_id'] ?? 0),
             (int)($r['circuito_id'] ?? 0),
@@ -87,8 +76,6 @@ class EVeicoloNoleggio
             $r['marca'] ?? null,
             $r['modello'] ?? null,
             (bool)($r['disponibile'] ?? true),
-            $importo,
-            $valuta,
             isset($r['id']) ? (int)$r['id'] : null
         );
     }
@@ -115,6 +102,4 @@ class EVeicoloNoleggio
     public function setModello(?string $v): void { $this->modello = $v; }
     public function isDisponibile(): bool    { return $this->disponibile; }
     public function setDisponibile(bool $v): void { $this->disponibile = $v; }
-    public function getListinoImporto(): float { return $this->listinoImporto; }
-    public function getListinoValuta(): string { return $this->listinoValuta; }
 }

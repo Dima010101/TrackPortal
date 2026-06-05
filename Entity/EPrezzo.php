@@ -1,10 +1,26 @@
 <?php
 
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * EPrezzo — elemento di listino (importo, valuta) associato a un veicolo noleggiabile (UML).
+ */
+#[ORM\Entity]
+#[ORM\Table(name: 'prezzo')]
 class EPrezzo
 {
-    protected ?int $id;
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(name: 'id', type: 'integer')]
+    protected ?int $id = null;
+
+    #[ORM\Column(name: 'veicolo_noleggio_id', type: 'integer')]
     protected int $veicoloNoleggioId;
+
+    #[ORM\Column(name: 'importo', type: 'decimal', precision: 10, scale: 2)]
     protected float $importo;
+
+    #[ORM\Column(name: 'valuta', type: 'string', length: 3)]
     protected string $valuta;
 
     public function __construct(
