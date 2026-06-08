@@ -59,11 +59,11 @@ class ECartaCredito
         );
     }
 
-    public function getId(): ?int                { return $this->id; }
-    public function getPilotaId(): int           { return $this->pilotaId; }
-    public function getNomeTitolare(): string    { return $this->nomeTitolare; }
+    public function getId(): ?int             { return $this->id; }
+    public function getPilotaId(): int         { return $this->pilotaId; }
+    public function getNomeTitolare(): string { return $this->nomeTitolare; }
     public function getCognomeTitolare(): string { return $this->cognomeTitolare; }
-    public function getNumeroMasked(): string    { return $this->numeroMasked; }
-    public function getDataScadenza(): string    { return $this->dataScadenza; }
-    public function getCvvHash(): string         { return $this->cvvHash; }
+    public function getNumeroMasked(): string { return $this->numeroMasked; }
+    public function getDataScadenza(): string { return $this->dataScadenza; }
+    public function getCvvHash(): string      { return $this->cvvHash; }
 }

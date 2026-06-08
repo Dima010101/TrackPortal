@@ -1,28 +1,73 @@
 <?php
+
+use Doctrine\ORM\Mapping as ORM;
+
 /**
  * Prenotazione pilota su un circuito.
  */
-
+#[ORM\Entity]
+#[ORM\Table(name: 'prenotazione')]
 class EPrenotazione
 {
-    protected ?int $id;
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(name: 'id', type: 'integer')]
+    protected ?int $id = null;
+
+    #[ORM\Column(name: 'codice_identificativo', type: 'string', length: 32, unique: true)]
     protected string $codiceIdentificativo;
+
+    #[ORM\Column(name: 'pilota_id', type: 'integer')]
     protected int $pilotaId;
+
+    #[ORM\Column(name: 'circuito_id', type: 'integer')]
     protected int $circuitoId;
-    protected ?int $veicoloNoleggioId;
-    protected ?string $targaVeicolo;
+
+    #[ORM\Column(name: 'veicolo_noleggio_id', type: 'integer', nullable: true)]
+    protected ?int $veicoloNoleggioId = null;
+
+    #[ORM\Column(name: 'targa_veicolo', type: 'string', length: 20, nullable: true)]
+    protected ?string $targaVeicolo = null;
+
+    #[ORM\Column(name: 'inizio_disponibilita', type: 'string', length: 19)]
     protected string $inizioDisponibilita;
+
+    #[ORM\Column(name: 'fine_disponibilita', type: 'string', length: 19)]
     protected string $fineDisponibilita;
+
+    #[ORM\Column(name: 'assicurazione', type: 'boolean')]
     protected bool $assicurazione;
-    protected ?int $prezzoId;
+
+    #[ORM\Column(name: 'prezzo_id', type: 'integer', nullable: true)]
+    protected ?int $prezzoId = null;
+
+    #[ORM\Column(name: 'prezzo_importo', type: 'decimal', precision: 10, scale: 2)]
     protected float $prezzoImporto;
+
+    #[ORM\Column(name: 'prezzo_valuta', type: 'string', length: 3)]
     protected string $prezzoValuta;
+
+    #[ORM\Column(name: 'stato', type: 'string', length: 20)]
     protected string $stato;
+
+    #[ORM\Column(name: 'carta_credito_id', type: 'integer')]
     protected int $cartaCreditoId;
+
+    #[ORM\Column(name: 'promozione_id', type: 'integer', nullable: true)]
+    protected ?int $promozioneId = null;
+
+    #[ORM\Column(name: 'sconto_importo', type: 'decimal', precision: 10, scale: 2)]
+    protected float $scontoImporto;
+
+    #[ORM\Column(name: 'rimborso_previsto', type: 'decimal', precision: 10, scale: 2)]
     protected float $rimborsoPrevisto;
-    protected ?string $causaCancellazione;
-    protected ?string $dataInserimento;
-    
+
+    #[ORM\Column(name: 'causa_cancellazione', type: 'string', length: 255, nullable: true)]
+    protected ?string $causaCancellazione = null;
+
+    #[ORM\Column(name: 'data_inserimento', type: 'string', length: 19, nullable: true)]
+    protected ?string $dataInserimento = null;
+
     public function __construct(
         int $pilotaId = 0,
         int $circuitoId = 0,
@@ -37,11 +82,13 @@ class EPrenotazione
         string $stato = 'in_attesa',
         string $codiceIdentificativo = '',
         int $cartaCreditoId = 0,
+        ?int $promozioneId = null,
+        float $scontoImporto = 0.0,
         float $rimborsoPrevisto = 0.0,
         ?string $causaCancellazione = null,
         ?int $id = null,
         ?string $dataInserimento = null
-    ){
+    ) {
         $this->id                    = $id;
         $this->codiceIdentificativo  = $codiceIdentificativo;
         $this->pilotaId              = $pilotaId;
@@ -56,9 +103,12 @@ class EPrenotazione
         $this->prezzoValuta          = $prezzoValuta;
         $this->stato                 = $stato;
         $this->cartaCreditoId        = $cartaCreditoId;
+        $this->promozioneId          = $promozioneId;
+        $this->scontoImporto         = $scontoImporto;
         $this->rimborsoPrevisto      = $rimborsoPrevisto;
         $this->causaCancellazione    = $causaCancellazione;
-        $this->dataInserimento       = $dataInserimento;
+        $this->dataInserimento       = $dataInserimento
+            ?? (new DateTimeImmutable('now'))->format('Y-m-d H:i:s');
     }
 
     public static function fromArray(array $r): self
@@ -78,14 +128,16 @@ class EPrenotazione
             (string)($r['stato'] ?? 'in_attesa'),
             (string)($r['codice_identificativo'] ?? ''),
             (int)($r['carta_credito_id'] ?? 0),
+            isset($r['promozione_id']) && $r['promozione_id'] !== null ? (int)$r['promozione_id'] : null,
+            (float)($r['sconto_importo'] ?? 0.0),
             (float)($r['rimborso_previsto'] ?? 0.0),
             $r['causa_cancellazione'] ?? null,
             isset($r['id']) ? (int)$r['id'] : null,
             $r['data_inserimento'] ?? null
         );
     }
-   
- public function getId(): ?int                 { return $this->id; }
+
+    public function getId(): ?int                 { return $this->id; }
     public function getCodiceIdentificativo(): string { return $this->codiceIdentificativo; }
     public function getPilotaId(): int             { return $this->pilotaId; }
     public function getCircuitoId(): int         { return $this->circuitoId; }
@@ -100,6 +152,8 @@ class EPrenotazione
     public function getStato(): string           { return $this->stato; }
     public function setStato(string $v): void   { $this->stato = $v; }
     public function getCartaCreditoId(): int     { return $this->cartaCreditoId; }
+    public function getPromozioneId(): ?int      { return $this->promozioneId; }
+    public function getScontoImporto(): float    { return $this->scontoImporto; }
     public function getRimborsoPrevisto(): float { return $this->rimborsoPrevisto; }
     public function setRimborsoPrevisto(float $v): void { $this->rimborsoPrevisto = $v; }
     public function getCausaCancellazione(): ?string { return $this->causaCancellazione; }
