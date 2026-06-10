@@ -330,8 +330,4 @@ class CircuitoFoto
             'didascalia' => $this->didascalia,
         ];
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> fcbccc295d5fa3291f88f0f44178402e2fe39a75

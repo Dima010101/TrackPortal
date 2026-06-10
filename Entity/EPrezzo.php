@@ -48,5 +48,6 @@ class EPrezzo
     public function getId(): ?int              { return $this->id; }
     public function getVeicoloNoleggioId(): int { return $this->veicoloNoleggioId; }
     public function getImporto(): float        { return $this->importo; }
+    public function setImporto(float $v): void   { $this->importo = $v; }
     public function getValuta(): string         { return $this->valuta; }
 }
