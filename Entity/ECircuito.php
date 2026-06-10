@@ -4,13 +4,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-<<<<<<< HEAD
-*/*
- * ECircuito — entità per i circuiti gestiti dai gestori di circuiti.
-=======
 /**
  * ECircuito — autodromo + attributi di dominio.
->>>>>>> fcbccc295d5fa3291f88f0f44178402e2fe39a75
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'circuito')]
