@@ -3,7 +3,7 @@
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Veicolo noleggiabile; il listino prezzi è gestito dalla tabella `prezzo`.
+ * EVeicoloNoleggio — veicolo noleggiabile
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'veicolo_noleggio')]
@@ -41,6 +41,9 @@ class EVeicoloNoleggio
     #[ORM\Column(name: 'modello', type: 'string', length: 80, nullable: true)]
     protected ?string $modello = null;
 
+    #[ORM\Column(name: 'prezzo', type: 'decimal', precision: 10, scale: 2)]
+    protected float $prezzo = 0.0;
+
     #[ORM\Column(name: 'disponibile', type: 'boolean')]
     protected bool $disponibile;
 
@@ -48,7 +51,7 @@ class EVeicoloNoleggio
         int $aziendaId = 0, int $circuitoId = 0, string $targa = '',
         string $categoria = 'auto', int $capienza = 1, ?int $potenzaCv = null,
         ?int $anno = null, ?string $marca = null, ?string $modello = null,
-        bool $disponibile = true, ?int $id = null
+        float $prezzo = 0.0, bool $disponibile = true, ?int $id = null
     ) {
         $this->id            = $id;
         $this->aziendaId     = $aziendaId;
@@ -60,6 +63,7 @@ class EVeicoloNoleggio
         $this->anno          = $anno;
         $this->marca         = $marca;
         $this->modello       = $modello;
+        $this->prezzo        = max(0.0, $prezzo);
         $this->disponibile   = $disponibile;
     }
 
@@ -75,6 +79,7 @@ class EVeicoloNoleggio
             isset($r['anno']) ? (int)$r['anno'] : null,
             $r['marca'] ?? null,
             $r['modello'] ?? null,
+            (float)($r['prezzo'] ?? 0.0),
             (bool)($r['disponibile'] ?? true),
             isset($r['id']) ? (int)$r['id'] : null
         );
@@ -100,6 +105,8 @@ class EVeicoloNoleggio
     public function setMarca(?string $v): void { $this->marca = $v; }
     public function getModello(): ?string    { return $this->modello; }
     public function setModello(?string $v): void { $this->modello = $v; }
+    public function getPrezzo(): float       { return $this->prezzo; }
+    public function setPrezzo(float $v): void { $this->prezzo = max(0.0, $v); }
     public function isDisponibile(): bool    { return $this->disponibile; }
     public function setDisponibile(bool $v): void { $this->disponibile = $v; }
 }
