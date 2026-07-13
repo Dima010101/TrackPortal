@@ -52,3 +52,64 @@ class EConfigurazionePiattaforma
         $this->aggiornatoIl            = $aggiornatoIl
             ?? (new DateTimeImmutable())->format('Y-m-d H:i:s');
     }
+
+    public static function fromArray(array $r): self
+    {
+        return new self(
+            (float)($r['prezzo_assicurazione'] ?? 0),
+            (float)($r['percentuale_commissione'] ?? 0),
+            (int)($r['id'] ?? self::ID_SISTEMA),
+            $r['aggiornato_il'] ?? null
+        );
+    }
+
+    public function getId(): int                       { return $this->id; }
+    public function getPrezzoAssicurazione(): float    { return $this->prezzoAssicurazione; }
+    public function getPercentualeCommissione(): float { return $this->percentualeCommissione; }
+    public function getAliquotaIva(): float            { return $this->aliquotaIva; }
+    public function setAliquotaIva(float $v): void     { $this->aliquotaIva = $v; }
+    public function getFiscDenominazione(): string     { return $this->fiscDenominazione; }
+    public function setFiscDenominazione(string $v): void { $this->fiscDenominazione = $v; }
+    public function getFiscPartitaIva(): string        { return $this->fiscPartitaIva; }
+    public function setFiscPartitaIva(string $v): void { $this->fiscPartitaIva = $v; }
+    public function getFiscCodiceFiscale(): ?string    { return $this->fiscCodiceFiscale; }
+    public function setFiscCodiceFiscale(?string $v): void { $this->fiscCodiceFiscale = $v; }
+    public function getFiscIndirizzo(): string         { return $this->fiscIndirizzo; }
+    public function setFiscIndirizzo(string $v): void  { $this->fiscIndirizzo = $v; }
+    public function getAggiornatoIl(): ?string         { return $this->aggiornatoIl; }
+
+    public function setAggiornatoIl(string $v): void
+    {
+        $this->aggiornatoIl = $v;
+    }
+
+    public function setPrezzoAssicurazione(float $v): void
+    {
+        $this->prezzoAssicurazione = $v;
+    }
+
+    public function setPercentualeCommissione(float $v): void
+    {
+        $this->percentualeCommissione = $v;
+    }
+
+    /**
+     * Commissione della piattaforma su un ammontare di ricavi, data la
+     * percentuale di commissione.
+     */
+    public static function calcolaCommissione(float $ricavi, float $percentuale): float
+    {
+        return round($ricavi * $percentuale / 100, 2);
+    }
+
+    /** @return array<string, mixed> */
+    public function toArray(): array
+    {
+        return [
+            'id'                       => $this->id,
+            'prezzo_assicurazione'     => $this->prezzoAssicurazione,
+            'percentuale_commissione'  => $this->percentualeCommissione,
+            'aggiornato_il'            => $this->aggiornatoIl,
+        ];
+    }
+}
