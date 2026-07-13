@@ -3,8 +3,8 @@
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Configurazione globale della piattaforma (riga singleton id=1).
- * Validazione e regole di business.
+ * valori attuali dei parametri della piattaforma (prezzo assicurazione, percentuale commissione e aliquota iva) .
+ * Validazione e regole di business in FConfigurazionePiattaforma.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'configurazione_piattaforma')]
@@ -22,6 +22,21 @@ class EConfigurazionePiattaforma
     #[ORM\Column(name: 'percentuale_commissione', type: 'decimal', precision: 5, scale: 2)]
     protected float $percentualeCommissione;
 
+    #[ORM\Column(name: 'aliquota_iva', type: 'decimal', precision: 5, scale: 2)]
+    protected float $aliquotaIva = 22.0;
+
+    #[ORM\Column(name: 'fisc_denominazione', type: 'string', length: 190)]
+    protected string $fiscDenominazione = 'TrackPortal';
+
+    #[ORM\Column(name: 'fisc_partita_iva', type: 'string', length: 20)]
+    protected string $fiscPartitaIva = '';
+
+    #[ORM\Column(name: 'fisc_codice_fiscale', type: 'string', length: 20, nullable: true)]
+    protected ?string $fiscCodiceFiscale = null;
+
+    #[ORM\Column(name: 'fisc_indirizzo', type: 'string', length: 255)]
+    protected string $fiscIndirizzo = '';
+
     #[ORM\Column(name: 'aggiornato_il', type: 'string', length: 19, nullable: true)]
     protected ?string $aggiornatoIl = null;
 
@@ -37,45 +52,3 @@ class EConfigurazionePiattaforma
         $this->aggiornatoIl            = $aggiornatoIl
             ?? (new DateTimeImmutable())->format('Y-m-d H:i:s');
     }
-
-    public static function fromArray(array $r): self
-    {
-        return new self(
-            (float)($r['prezzo_assicurazione'] ?? 0),
-            (float)($r['percentuale_commissione'] ?? 0),
-            (int)($r['id'] ?? self::ID_SISTEMA),
-            $r['aggiornato_il'] ?? null
-        );
-    }
-
-    public function getId(): int                       { return $this->id; }
-    public function getPrezzoAssicurazione(): float    { return $this->prezzoAssicurazione; }
-    public function getPercentualeCommissione(): float { return $this->percentualeCommissione; }
-    public function getAggiornatoIl(): ?string         { return $this->aggiornatoIl; }
-
-    public function setAggiornatoIl(string $v): void
-    {
-        $this->aggiornatoIl = $v;
-    }
-
-    public function setPrezzoAssicurazione(float $v): void
-    {
-        $this->prezzoAssicurazione = $v;
-    }
-
-    public function setPercentualeCommissione(float $v): void
-    {
-        $this->percentualeCommissione = $v;
-    }
-
-    /** @return array<string, mixed> */
-    public function toArray(): array
-    {
-        return [
-            'id'                       => $this->id,
-            'prezzo_assicurazione'     => $this->prezzoAssicurazione,
-            'percentuale_commissione'  => $this->percentualeCommissione,
-            'aggiornato_il'            => $this->aggiornatoIl,
-        ];
-    }
-}
