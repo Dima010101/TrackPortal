@@ -165,3 +165,56 @@ class EPromozione
 
         return round(min($baseImporto, max(0.0, $sconto)), 2);
     }
+    
+    /**
+     * Verifica se la promozione è applicabile a una prenotazione in base ai criteri specificati.
+     */
+    public function isApplicabile(
+        int $circuitoId,
+        ?int $veicoloId,
+        DateTimeImmutable $prenotazioneOra,
+        float $baseImporto,
+        int $storichePrenotazioniCircuito
+    ): bool {
+        if ($this->statoPromozione !== 'attiva') {
+            return false;
+        }
+        if (!empty($this->circuitoId) && $this->circuitoId !== $circuitoId) {
+            return false;
+        }
+        if (!empty($this->veicoloNoleggioId)
+            && $this->veicoloNoleggioId !== (int)($veicoloId ?? 0)) {
+            return false;
+        }
+
+        $dataInizio = (string)($this->dataInizio ?? '');
+        $dataFine   = (string)($this->dataFine ?? '');
+        if ($dataInizio === '' || $dataFine === '') {
+            $dataInizio = (string)($this->dataPrenotazioneInizio ?? '');
+            $dataFine   = (string)($this->dataPrenotazioneFine ?? '');
+        }
+        if ($dataInizio !== '' && $dataFine !== '') {
+            try {
+                $validitaInizio = new DateTimeImmutable($dataInizio);
+                $validitaFine   = new DateTimeImmutable($dataFine);
+            } catch (Exception) {
+                return false;
+            }
+            $giorno = $prenotazioneOra->format('Y-m-d');
+            if ($giorno < $validitaInizio->format('Y-m-d')
+                || $giorno > $validitaFine->format('Y-m-d')) {
+                return false;
+            }
+        }
+
+        $soglia = $this->sogliaPrenotazioni ?? 0;
+        if ($this->segmentoDestinatari === 'storico_prenotazioni' && $soglia < 1) {
+            $soglia = 1;
+        }
+        if ($soglia > 0 && $storichePrenotazioniCircuito < $soglia) {
+            return false;
+        }
+
+        return $baseImporto > 0;
+    }
+}
