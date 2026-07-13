@@ -128,3 +128,40 @@ class EPromozione
     public function getDataPrenotazioneInizio(): ?string { return $this->dataPrenotazioneInizio; }
     public function getDataPrenotazioneFine(): ?string { return $this->dataPrenotazioneFine; }
     public function getStatoPromozione(): string { return $this->statoPromozione; }
+
+    public function updateDetails(
+        string $titolo,
+        ?string $descrizione,
+        string $tipoSconto,
+        float $valore,
+        ?string $dataInizio,
+        ?string $dataFine,
+        ?int $sogliaPrenotazioni,
+        ?int $veicoloNoleggioId,
+        ?int $circuitoId
+    ): void {
+        $this->titolo             = $titolo;
+        $this->descrizione        = $descrizione;
+        $this->tipoSconto         = $tipoSconto;
+        $this->valore             = $valore;
+        $this->dataInizio         = $dataInizio !== '' ? $dataInizio : null;
+        $this->dataFine           = $dataFine !== '' ? $dataFine : null;
+        $this->sogliaPrenotazioni = $sogliaPrenotazioni;
+        $this->veicoloNoleggioId  = $veicoloNoleggioId;
+        $this->circuitoId         = $circuitoId;
+        $this->segmentoDestinatari = 'tutti';
+        $this->dataPrenotazioneInizio = null;
+        $this->dataPrenotazioneFine = null;
+    }
+    /**
+     * Calcola lo sconto da applicare a un importo base in base al tipo di sconto e al valore della promozione.
+     */
+    public function calcolaSconto(float $baseImporto): float
+    {
+        $valore = max(0.0, $this->valore);
+        $sconto = $this->tipoSconto === 'importo'
+            ? $valore
+            : ($baseImporto * $valore / 100.0);
+
+        return round(min($baseImporto, max(0.0, $sconto)), 2);
+    }
