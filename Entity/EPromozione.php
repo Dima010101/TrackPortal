@@ -84,3 +84,47 @@ class EPromozione
         $this->dataPrenotazioneFine = $dataPrenotazioneFine !== '' ? $dataPrenotazioneFine : null;
         $this->statoPromozione    = $statoPromozione;
     }
+
+    public static function fromArray(array $r): self
+    {
+        return new self(
+            isset($r['creator_account_id']) && $r['creator_account_id'] !== null
+                ? (int)$r['creator_account_id'] : null,
+            isset($r['veicolo_noleggio_id']) && $r['veicolo_noleggio_id'] !== null
+                ? (int)$r['veicolo_noleggio_id'] : null,
+            isset($r['circuito_id']) && $r['circuito_id'] !== null ? (int)$r['circuito_id'] : null,
+            (string)($r['titolo'] ?? ''),
+            $r['descrizione'] ?? null,
+            (string)($r['tipo_sconto'] ?? 'percentuale'),
+            (float)($r['valore'] ?? 0.0),
+            (string)($r['codice'] ?? ''),
+            isset($r['data_inizio']) && $r['data_inizio'] !== '' ? (string)$r['data_inizio'] : null,
+            isset($r['data_fine']) && $r['data_fine'] !== '' ? (string)$r['data_fine'] : null,
+            (string)($r['stato_promozione'] ?? 'attiva'),
+            isset($r['id']) ? (int)$r['id'] : null,
+            (string)($r['segmento_destinatari'] ?? 'tutti'),
+            isset($r['soglia_prenotazioni']) && $r['soglia_prenotazioni'] !== null
+                ? (int)$r['soglia_prenotazioni'] : null,
+            isset($r['data_prenotazione_inizio']) && $r['data_prenotazione_inizio'] !== ''
+                ? (string)$r['data_prenotazione_inizio'] : null,
+            isset($r['data_prenotazione_fine']) && $r['data_prenotazione_fine'] !== ''
+                ? (string)$r['data_prenotazione_fine'] : null
+        );
+    }
+    
+    public function getId(): ?int                      { return $this->id; }
+    public function getCreatorAccountId(): ?int        { return $this->creatorAccountId; }
+    public function getVeicoloNoleggioId(): ?int       { return $this->veicoloNoleggioId; }
+    public function getCircuitoId(): ?int              { return $this->circuitoId; }
+    public function getTitolo(): string          { return $this->titolo; }
+    public function getDescrizione(): ?string    { return $this->descrizione; }
+    public function getTipoSconto(): string      { return $this->tipoSconto; }
+    public function getValore(): float           { return $this->valore; }
+    public function getCodice(): string          { return $this->codice; }
+    public function getDataInizio(): ?string      { return $this->dataInizio; }
+    public function getDataFine(): ?string        { return $this->dataFine; }
+    public function getSegmentoDestinatari(): string { return $this->segmentoDestinatari; }
+    public function getSogliaPrenotazioni(): ?int { return $this->sogliaPrenotazioni; }
+    public function getDataPrenotazioneInizio(): ?string { return $this->dataPrenotazioneInizio; }
+    public function getDataPrenotazioneFine(): ?string { return $this->dataPrenotazioneFine; }
+    public function getStatoPromozione(): string { return $this->statoPromozione; }
