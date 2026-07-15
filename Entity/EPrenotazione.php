@@ -185,19 +185,17 @@ class EPrenotazione
     public function getImponibileAssicurazione(): float       { return $this->imponibileAssicurazione; }
     public function setImponibileAssicurazione(float $v): void { $this->imponibileAssicurazione = $v; }
 
-    // --- Regole di pricing/codifica (requisiti funzionali nel Model, slide step 4) ---
+    // --- Pricing e codice prenotazione ---
 
-    /** Genera un codice identificativo univoco per una nuova prenotazione. */
+    /** Codice univoco per una nuova prenotazione. */
     public static function generaCodice(): string
     {
         return 'TP-' . strtoupper(bin2hex(random_bytes(6)));
     }
 
     /**
-     * Prezzo totale di una prenotazione: base (accesso + eventuale noleggio)
-     * meno lo sconto promozione (mai sotto zero), più l'assicurazione se scelta.
-     * Regola di pricing centralizzata nel Model, usata sia in fase di riepilogo
-     * sia al salvataggio (un'unica fonte di verità).
+     * Prezzo totale: base meno sconto (mai sotto zero), più assicurazione se
+     * scelta. Unica regola di pricing, usata sia nel riepilogo che al salvataggio.
      */
     public static function calcolaPrezzoTotale(
         float $prezzoBase,
@@ -214,10 +212,9 @@ class EPrenotazione
     }
 
     /**
-     * Scompone il prezzo in imponibili netti (accesso/noleggio/assicurazione)
-     * per la fatturazione e li assegna a questa prenotazione. Lo sconto è
-     * ripartito proporzionalmente tra accesso e noleggio, così la somma delle
-     * fette coincide sempre con il prezzo totale.
+     * Scompone il prezzo negli imponibili per la fatturazione. Lo sconto è
+     * ripartito pro quota tra accesso e noleggio, così la somma torna sempre
+     * col prezzo totale.
      */
     public function scomponiImponibili(
         float $prezzoBase,
@@ -240,16 +237,14 @@ class EPrenotazione
         $this->imponibileAssicurazione = $this->assicurazione ? round($prezzoAssicurazione, 2) : 0.0;
     }
 
-    // --- Policy di rimborso alla cancellazione (requisito funzionale nel Model) ---
+    // --- Rimborso alla cancellazione ---
 
     /**
-     * Percentuali di rimborso (0-100) alla cancellazione di una prenotazione.
-     * Con assicurazione il rimborso è SEMPRE pieno; senza assicurazione si applica
-     * una scala in base all'anticipo rispetto all'inizio della sessione.
+     * Percentuali di rimborso (0-100): con assicurazione sempre 100%, altrimenti
+     * a scaglioni in base all'anticipo sull'inizio della sessione.
      *
-     * NB: gli stessi valori sono pubblicizzati nel box assicurazione
-     * (partials/box_assicurazione.tpl) e nei template di cancellazione: se cambiano
-     * qui, aggiornare la copia di quelle pagine.
+     * NB: gli stessi valori sono citati in partials/box_assicurazione.tpl e nei
+     * template di cancellazione: se cambiano qui, aggiornare anche lì.
      */
     public const RIMBORSO_PERC_ASSICURATO       = 100; // assicurato: sempre 100%
     public const RIMBORSO_PERC_ANTICIPO_ALTO    = 90;  // >= 7 giorni prima
@@ -257,13 +252,7 @@ class EPrenotazione
     public const RIMBORSO_PERC_ANTICIPO_BASSO   = 50;  // 1-3 giorni prima
     public const RIMBORSO_PERC_ANTICIPO_MINIMO  = 30;  // < 24 ore prima
 
-    /**
-     * Percentuale di rimborso applicabile a una cancellazione.
-     *
-     * @param bool        $assicurato            La prenotazione include l'assicurazione.
-     * @param string|null $inizioSessione   Inizio sessione (Y-m-d H:i:s); guida le fasce.
-     * @param DateTimeImmutable|null $ora         Istante di riferimento (default: adesso).
-     */
+    /** Percentuale di rimborso per una cancellazione ($ora: default adesso). */
     public static function percentualeRimborso(
         bool $assicurato,
         ?string $inizioSessione = null,
@@ -273,7 +262,7 @@ class EPrenotazione
             return self::RIMBORSO_PERC_ASSICURATO;
         }
 
-        // Senza data sessione non possiamo calcolare l'anticipo: fascia intermedia.
+        // Senza data non si calcola l'anticipo: fascia intermedia.
         if ($inizioSessione === null || $inizioSessione === '') {
             return self::RIMBORSO_PERC_ANTICIPO_MEDIO;
         }
