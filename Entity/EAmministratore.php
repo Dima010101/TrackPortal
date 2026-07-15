@@ -18,19 +18,15 @@ class EAmministratore extends EAccount
         string $password,
         string $statoAccount = 'attivo',
         ?int $id = null,
-        ?string $dataInizioSospensione = null,
-        ?string $dataFineSospensione = null,
         ?string $dataCreazione = null
     ) {
         parent::__construct(
-            $id,
             $nome,
             $cognome,
             $email,
             $password,
             $statoAccount,
-            $dataInizioSospensione,
-            $dataFineSospensione,
+            $id,
             $dataCreazione
         );
     }

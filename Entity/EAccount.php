@@ -37,14 +37,14 @@ abstract class EAccount
     #[ORM\Column(name: 'stato_account', type: 'string', length: 20)]
     protected string $statoAccount;
 
-    #[ORM\Column(name: 'data_inizio_sospensione', type: 'string', length: 10, nullable: true)]
-    protected ?string $dataInizioSospensione = null;
-
-    #[ORM\Column(name: 'data_fine_sospensione', type: 'string', length: 10, nullable: true)]
-    protected ?string $dataFineSospensione = null;
-
     #[ORM\Column(name: 'data_creazione', type: 'string', length: 19, nullable: true)]
     protected ?string $dataCreazione = null;
+
+    #[ORM\Column(name: 'email_verificata', type: 'boolean')]
+    protected bool $emailVerificata = false;
+
+    #[ORM\Column(name: 'token_verifica', type: 'string', length: 64, nullable: true)]
+    protected ?string $tokenVerifica = null;
 
     protected function __construct(
         string $nome,
@@ -53,19 +53,15 @@ abstract class EAccount
         string $password,
         string $statoAccount = 'attivo',
         ?int $id = null,
-        ?string $dataInizioSospensione = null,
-        ?string $dataFineSospensione = null,
         ?string $dataCreazione = null
     ) {
-        $this->id                    = $id;
-        $this->nome                  = $nome;
-        $this->cognome               = $cognome;
-        $this->email                 = $email;
-        $this->password              = $password;
-        $this->statoAccount          = $statoAccount;
-        $this->dataInizioSospensione = $dataInizioSospensione;
-        $this->dataFineSospensione   = $dataFineSospensione;
-        $this->dataCreazione         = $dataCreazione;
+        $this->id            = $id;
+        $this->nome          = $nome;
+        $this->cognome       = $cognome;
+        $this->email         = $email;
+        $this->password      = $password;
+        $this->statoAccount  = $statoAccount;
+        $this->dataCreazione = $dataCreazione;
     }
     public function getId(): ?int                                 { return $this->id; }
     public function setId(?int $id): void                         { $this->id = $id; }
@@ -80,8 +76,8 @@ abstract class EAccount
     public function getStatoAccount(): string                     { return $this->statoAccount; }
     public function setStatoAccount(string $statoAccount): void   { $this->statoAccount = $statoAccount; }
     public function getDataCreazione(): ?string                   { return $this->dataCreazione; }
-    public function getDataInizioSospensione(): ?string           { return $this->dataInizioSospensione; }
-    public function setDataInizioSospensione(?string $data): void { $this->dataInizioSospensione = $data; }
-    public function getDataFineSospensione(): ?string             { return $this->dataFineSospensione; }
-    public function setDataFineSospensione(?string $data): void   { $this->dataFineSospensione = $data; }
+    public function isEmailVerificata(): bool                     { return $this->emailVerificata; }
+    public function setEmailVerificata(bool $v): void             { $this->emailVerificata = $v; }
+    public function getTokenVerifica(): ?string                   { return $this->tokenVerifica; }
+    public function setTokenVerifica(?string $token): void        { $this->tokenVerifica = $token; }
 }
