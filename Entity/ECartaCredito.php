@@ -29,12 +29,9 @@ class ECartaCredito
     #[ORM\Column(name: 'data_scadenza', type: 'string', length: 7)]
     protected string $dataScadenza;
 
-    #[ORM\Column(name: 'cvv_hash', type: 'string', length: 255)]
-    protected string $cvvHash;
-
     public function __construct(
         int $pilotaId = 0, string $nomeTitolare = '', string $cognomeTitolare = '',
-        string $numeroMasked = '', string $dataScadenza = '', string $cvvHash = '',
+        string $numeroMasked = '', string $dataScadenza = '',
         ?int $id = null
     ) {
         $this->id              = $id;
@@ -43,7 +40,6 @@ class ECartaCredito
         $this->cognomeTitolare = $cognomeTitolare;
         $this->numeroMasked    = $numeroMasked;
         $this->dataScadenza    = $dataScadenza;
-        $this->cvvHash         = $cvvHash;
     }
 
     public static function fromArray(array $r): self
@@ -54,7 +50,6 @@ class ECartaCredito
             (string)($r['cognome_titolare'] ?? ''),
             (string)($r['numero_masked'] ?? ''),
             (string)($r['data_scadenza'] ?? ''),
-            (string)($r['cvv_hash'] ?? ''),
             isset($r['id']) ? (int)$r['id'] : null
         );
     }
@@ -65,5 +60,4 @@ class ECartaCredito
     public function getCognomeTitolare(): string { return $this->cognomeTitolare; }
     public function getNumeroMasked(): string { return $this->numeroMasked; }
     public function getDataScadenza(): string { return $this->dataScadenza; }
-    public function getCvvHash(): string      { return $this->cvvHash; }
 }
