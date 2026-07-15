@@ -2,9 +2,7 @@
 
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * EVeicoloNoleggio — veicolo noleggiabile
- */
+/** Veicolo a noleggio di un'azienda; prezzo di listino in EUR. */
 #[ORM\Entity]
 #[ORM\Table(name: 'veicolo_noleggio')]
 class EVeicoloNoleggio

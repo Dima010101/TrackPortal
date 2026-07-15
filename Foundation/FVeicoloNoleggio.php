@@ -31,10 +31,8 @@ class FVeicoloNoleggio extends FRepository
     }
 
     /**
-     * Veicoli disponibili su un circuito. Se viene passata una fascia oraria
-     * ($inizio, $fine), esclude i veicoli che risultano già prenotati (con una
-     * prenotazione confermata) in un intervallo sovrapposto: la disponibilità è
-     * così limitata al periodo della sessione, non assoluta.
+     * Veicoli disponibili su un circuito. Con $inizio/$fine esclude quelli già
+     * prenotati (confermata) in un intervallo sovrapposto.
      */
     public static function loadDisponibiliByCircuito(int $circuitoId, ?string $inizio = null, ?string $fine = null): array
     {
@@ -59,11 +57,7 @@ class FVeicoloNoleggio extends FRepository
         return FDataBase::executeQuery($sql, $args)->fetchAllAssociative();
     }
 
-    /**
-     * True se il veicolo ha una prenotazione confermata sovrapposta alla
-     * fascia oraria indicata (overlap: esistente.inizio < nuova.fine e
-     * esistente.fine > nuova.inizio).
-     */
+    /** True se il veicolo ha una prenotazione confermata sovrapposta alla fascia. */
     public static function prenotatoInIntervallo(int $veicoloId, string $inizio, string $fine): bool
     {
         $n = FDataBase::executeQuery(
@@ -93,11 +87,7 @@ class FVeicoloNoleggio extends FRepository
         )->fetchAllAssociative();
     }
 
-    /**
-     * Veicoli più richiesti di un'azienda (per numero di prenotazioni).
-     *
-     * @return list<array<string, mixed>>
-     */
+    /** Veicoli più noleggiati di un'azienda. */
     public static function loadTopByAzienda(int $aziendaId, int $limit = 5): array
     {
         return FDataBase::executeQuery(
@@ -183,10 +173,8 @@ class FVeicoloNoleggio extends FRepository
     }
 
     /**
-     * Prezzo di listino dal form: importo nella valuta scelta dall'azienda,
-     * SEMPRE convertito e salvato in EUR (tassi correnti di FCambioValuta).
-     *
-     * @param array<string, mixed> $dati
+     * Prezzo dal form: l'importo arriva nella valuta scelta dall'azienda e
+     * viene sempre salvato in EUR (tassi di FCambioValuta).
      */
     private static function prezzoEuroDaForm(array $dati): float
     {
@@ -197,11 +185,8 @@ class FVeicoloNoleggio extends FRepository
     }
 
     /**
-     * Crea un nuovo veicolo (con il proprio prezzo di listino) dai dati del form.
-     * Il veicolo viene associato al circuito scelto e all'azienda loggata.
-     *
-     * @param array<string, mixed> $dati
-     * @return array<string, mixed>
+     * Crea un veicolo dai dati del form, legato al circuito scelto e
+     * all'azienda loggata.
      */
     public static function creaDaForm(int $aziendaId, array $dati): array
     {
@@ -240,10 +225,7 @@ class FVeicoloNoleggio extends FRepository
         });
     }
 
-    /**
-     * @param array<string, mixed> $dati
-     * @return array<string, mixed>
-     */
+    /** Aggiorna un veicolo dell'azienda dai dati del form. */
     public static function aggiornaDaForm(int $veicoloId, int $aziendaId, array $dati): array
     {
         $potenzaRaw = trim((string) ($dati['potenza_cv'] ?? ''));
