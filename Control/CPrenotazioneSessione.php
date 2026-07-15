@@ -1,21 +1,14 @@
 <?php
 
 /**
- * CPrenotazioneSessione ( caso d'uso «Prenotazione sessione» ).
+ * Controller del caso d'uso «Prenotazione sessione» (attore: pilota).
  *
- * Operazioni di sistema (1 metodo per interazione utente-sistema):
- *  - selezionaSessione()       → 1a/1b: dettagli della sessione selezionata
- *  - confermaSessione()        → 2a: conferma e scelta veicolo proprio/noleggio
- *  - inserisciTarga()          → 3a/3b ramo «veicolo proprio»: targa + riepilogo
- *  - richiediVeicoloNoleggio() → 3a ramo «noleggio»: veicoli disponibili
- *  - selezionaVeicolo()        → 3b ramo «noleggio»: selezione + riepilogo
- *  - confermaPagamento()       → 4a/4b: pagamento, registrazione, riassunto finale
- *  - tassiCambio()             → supporto (JSON): tassi per la visualizzazione dei
- *                                prezzi in valuta nelle schermate del flusso
+ * Un metodo pubblico per ogni passo del flusso (vedi ROUTES, i tag 1a/2a/…
+ * sono sui singoli metodi); tassiCambio è un supporto JSON per i prezzi in valuta.
  */
 class CPrenotazioneSessione
 {
-    /** Tabella rotte (URL → metodo); risolta da CFrontController. */
+    /** Tabella rotte «pulite» (URL → metodo); risolta da CFrontController. */
     public const ROUTES = [
         'GET {id}' => 'selezionaSessione',
         'POST conferma' => 'confermaSessione',
@@ -28,10 +21,9 @@ class CPrenotazioneSessione
     private const SESSION_KEY = 'booking';
 
     /**
-     * GET /api/valute — tassi di cambio (JSON, base EUR) per il selettore di
-     * valuta delle schermate di prenotazione. Il browser non può interrogare
-     * direttamente il web service esterno (la CSP consente solo 'self'):
-     * questo endpoint same-origin fa da proxy tramite la Foundation (con cache).
+     * GET /api/valute — tassi di cambio (JSON, base EUR). La CSP consente solo
+     * 'self', quindi il browser non può chiamare il web service esterno: questo
+     * endpoint fa da proxy tramite la Foundation (con cache).
      */
     public function tassiCambio(): void
     {
@@ -152,11 +144,7 @@ class CPrenotazioneSessione
         self::mostraElencoNoleggio($sessione, $circuito, self::veicoliDisponibiliIntervallo($state ?? []), $errors, $state);
     }
 
-    /**
-     * POST — elabora pagamento, salva prenotazione e mostra conferma finale (4a/4b).
-     *
-     * @param array<string, mixed> $datiPagamento
-     */
+    /** POST — elabora pagamento, salva prenotazione e mostra conferma finale (4a/4b). */
     public function confermaPagamento(array $datiPagamento = [], int|string|null $assicurazione = null): void
     {
         CAuth::richiediRuolo(EPilota::$ruolo);
@@ -198,8 +186,8 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Pre-condizioni del UC (documenti approvati, licenza valida): in caso di
-     * violazione l'utente viene reindirizzato al proprio account.
+     * Pre-condizioni del UC (documenti approvati, licenza valida): se violate,
+     * redirect all'account.
      */
     private static function pilotaProntoOppureRedirect(int $utenteId): EPilota
     {
@@ -237,10 +225,9 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Contesto degli step successivi alla scelta modalità: lo stato in sessione
-     * deve esistere ed essere nel ramo atteso (proprio/noleggio).
+     * Contesto degli step dopo la scelta modalità: lo stato in sessione deve
+     * esistere ed essere nel ramo atteso (proprio/noleggio).
      *
-     * @param array<string, mixed>|null $state
      * @return array{0: ?ESessione, 1: ?array<string, mixed>, 2: list<string>}
      */
     private static function contestoModalita(?array $state, string $modalita, int $pilotaId, string $msgFuoriFlusso): array
@@ -253,10 +240,9 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Contesto del passo di pagamento: oltre alla sessione servono i dati del
-     * veicolo scelti nel ramo corrente (targa o veicolo a noleggio).
+     * Contesto del pagamento: oltre alla sessione servono i dati del veicolo
+     * del ramo corrente (targa o veicolo a noleggio).
      *
-     * @param array<string, mixed>|null $state
      * @return array{0: ?ESessione, 1: ?array<string, mixed>, 2: list<string>}
      */
     private static function contestoPagamento(?array $state, int $pilotaId): array
@@ -312,11 +298,8 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Valida la scelta della modalità (CSRF compreso), la registra nello stato
-     * e instrada il ramo noleggio; ritorna gli errori per il ramo proprio.
-     *
-     * @param array<string, mixed>|null $state
-     * @return list<string>
+     * Valida la scelta della modalità (CSRF compreso), la salva nello stato e
+     * instrada il ramo noleggio; ritorna gli errori per il ramo proprio.
      */
     private static function elaboraSceltaModalita(?array $state): array
     {
@@ -340,12 +323,7 @@ class CPrenotazioneSessione
         return [];
     }
 
-    /**
-     * Form dati utente (3a ramo «proprio»/2a) con prezzo assicurazione corrente.
-     *
-     * @param array<string, mixed>|null $state
-     * @param list<string> $errors
-     */
+    /** Form dati utente (3a ramo «proprio»/2a) con prezzo assicurazione corrente. */
     private static function mostraFormDatiUtente(?ESessione $sessione, ?array $circuito, ?EPilota $pilota, ?array $state, array $errors): void
     {
         VPrenotazione::formDatiUtente(
@@ -358,13 +336,7 @@ class CPrenotazioneSessione
         );
     }
 
-    /**
-     * Elenco veicoli a noleggio (3a/3b ramo «noleggio») con prezzo assicurazione.
-     *
-     * @param list<array<string, mixed>> $veicoli
-     * @param list<string> $errors
-     * @param array<string, mixed>|null $state
-     */
+    /** Elenco veicoli a noleggio (3a/3b ramo «noleggio») con prezzo assicurazione. */
     private static function mostraElencoNoleggio(?ESessione $sessione, ?array $circuito, array $veicoli, array $errors, ?array $state): void
     {
         VPrenotazione::elencoVeicoliNoleggio(
@@ -399,7 +371,7 @@ class CPrenotazioneSessione
         );
     }
 
-    /** @return list<array<string, mixed>> Veicoli a noleggio liberi nella fascia della sessione. */
+    /** Veicoli a noleggio liberi nella fascia della sessione. */
     private static function veicoliDisponibili(?ESessione $sessione): array
     {
         if ($sessione === null) {
@@ -413,7 +385,6 @@ class CPrenotazioneSessione
         );
     }
 
-    /** @param array<string, mixed> $state @return list<array<string, mixed>> */
     private static function veicoliDisponibiliIntervallo(array $state): array
     {
         return FPersistentManager::veicoloNoleggioLoadDisponibiliByCircuito(
@@ -442,10 +413,7 @@ class CPrenotazioneSessione
 
     /**
      * Verifica il veicolo scelto nel ramo noleggio (esistenza, disponibilità,
-     * appartenenza al circuito) e i vincoli di noleggio.
-     *
-     * @param array<string, mixed>|null $state
-     * @param array<string, mixed>|null $circuito
+     * circuito) e i vincoli di noleggio.
      */
     private static function validaVeicoloScelto(int $veicoloId, ?array $state, ?array $circuito, int $pilotaId): ?string
     {
@@ -467,17 +435,13 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Vincoli del noleggio: sanzioni dell'azienda proprietaria, sovrapposizione
-     * con altre prenotazioni, categoria ammessa dal circuito.
-     *
-     * @param array<string, mixed> $veicolo
-     * @param array<string, mixed> $state
-     * @param array<string, mixed>|null $circuito
+     * Vincoli del noleggio: sanzioni dell'azienda, sovrapposizioni con altre
+     * prenotazioni, categoria ammessa dal circuito.
      */
     private static function erroreVincoliNoleggio(array $veicolo, array $state, ?array $circuito, int $pilotaId): ?string
     {
-        // Ban/sospensione emessi dall'azienda proprietaria del veicolo:
-        // bloccano il noleggio dei suoi mezzi (il pilota resta libero altrove).
+        // Sanzione dell'azienda proprietaria: blocca il noleggio dei suoi
+        // mezzi, il pilota resta libero altrove.
         $sanzione = FPersistentManager::sanzionePilotaNoleggioPilotaBloccatoSuAzienda($pilotaId, (int) $veicolo['azienda_id']);
         if ($sanzione !== null) {
             return self::messaggioSanzione($sanzione, true);
@@ -500,9 +464,8 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Orchestrazione dei controlli di prenotabilità: il controller raccoglie i
-     * fatti (sanzioni, pilota, conteggi) dalla Foundation e delega le DECISIONI
-     * di dominio a {@see ESessione}; qui restano solo coordinamento e messaggi.
+     * Controlli di prenotabilità: il controller raccoglie i fatti dalla
+     * Foundation e lascia le decisioni di dominio a ESessione.
      */
     private static function erroreDisponibilitaSessione(ESessione $sessione, int $pilotaId): ?string
     {
@@ -510,15 +473,14 @@ class CPrenotazioneSessione
             return 'La sessione è stata annullata e non accetta prenotazioni.';
         }
 
-        // Ban/sospensione emessi dal gestore di QUESTO circuito: bloccano le
-        // prenotazioni sul suo gruppo di circuiti (il pilota resta libero altrove).
+        // Sanzione del gestore di QUESTO circuito: blocca i suoi circuiti,
+        // il pilota resta libero altrove.
         $sanzione = FPersistentManager::sanzionePilotaPilotaBloccatoSuCircuito($pilotaId, $sessione->getCircuitoId());
         if ($sanzione !== null) {
             return self::messaggioSanzione($sanzione);
         }
 
-        // La categoria della sessione determina chi può prenotare; 'privata'
-        // (o qualsiasi stato non prenotabile) non ammette prenotazioni.
+        // 'privata' (o altro stato non prenotabile) non ammette prenotazioni.
         if ($sessione->categoriaAmmessa() === null) {
             return 'La sessione è privata e non accetta prenotazioni.';
         }
@@ -572,10 +534,8 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Messaggio di blocco per un pilota sanzionato dall'emittente (gestore del
-     * circuito o, con $noleggio, azienda proprietaria del veicolo).
-     *
-     * @param array<string, mixed> $sanzione Riga di sanzione.
+     * Messaggio di blocco per un pilota sanzionato (dal gestore del circuito
+     * o, con $noleggio, dall'azienda del veicolo).
      */
     private static function messaggioSanzione(array $sanzione, bool $noleggio = false): string
     {
@@ -591,7 +551,6 @@ class CPrenotazioneSessione
         return $chi . ' sospeso' . self::finoAl($sanzione) . ': non puoi ' . $cosa . '.' . $coda;
     }
 
-    /** @param array<string, mixed> $sanzione */
     private static function finoAl(array $sanzione): string
     {
         try {
@@ -603,7 +562,6 @@ class CPrenotazioneSessione
 
     // ---- Riepilogo e pagamento ----
 
-    /** @param array<string, mixed> $state @param list<string> $errors */
     private static function renderRiepilogo(int $pilotaId, ?ESessione $sessione, ?array $circuito, array $state, array $errors): void
     {
         $prezzoAssicurazione = FPersistentManager::configurazionePiattaformaPrezzoAssicurazione();
@@ -629,7 +587,6 @@ class CPrenotazioneSessione
         );
     }
 
-    /** @return array<string, mixed> */
     private static function datiPagamentoDaPost(): array
     {
         return [
@@ -643,12 +600,7 @@ class CPrenotazioneSessione
         ];
     }
 
-    /**
-     * Valida CSRF, gate documenti (enforcement lato server contro POST diretti)
-     * e dati di pagamento.
-     *
-     * @param array<string, mixed> $dati
-     */
+    /** Valida CSRF, gate documenti (anche contro POST diretti) e dati di pagamento. */
     private static function erroreValidazionePagamento(array $dati, int $pilotaId): ?string
     {
         if (!csrf_check(post('csrf_token'))) {
@@ -665,10 +617,8 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Valida i dati di pagamento lato server (fonte di verità): carta salvata
-     * di proprietà del pilota oppure campi della nuova carta.
-     *
-     * @param array<string, mixed> $dati
+     * Validazione lato server dei dati di pagamento: carta salvata di proprietà
+     * del pilota oppure campi della nuova carta.
      */
     private static function validaDatiPagamento(array $dati, int $pilotaId): ?string
     {
@@ -682,7 +632,6 @@ class CPrenotazioneSessione
         return self::erroreNuovaCarta($dati);
     }
 
-    /** @param array<string, mixed> $dati */
     private static function erroreNuovaCarta(array $dati): ?string
     {
         if (!cc_titolare_valido((string) ($dati['cc_nome'] ?? ''))) {
@@ -705,14 +654,9 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Valida il pagamento, registra la prenotazione (in transazione), emette i
-     * documenti fiscali e mostra la conferma finale. Ritorna gli errori (vuoto
-     * se la conferma è già stata resa).
-     *
-     * @param array<string, mixed> $user
-     * @param array<string, mixed>|null $circuito
-     * @param array<string, mixed> $datiPagamento
-     * @return list<string>
+     * Valida il pagamento, registra la prenotazione in transazione, emette i
+     * documenti fiscali e mostra la conferma. Ritorna gli errori (vuoto se la
+     * conferma è già stata resa).
      */
     private static function processaPagamento(array $user, ?ESessione $sessione, ?array $circuito, array $datiPagamento): array
     {
@@ -739,9 +683,8 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Emissione documenti fiscali + email con ricevuta a pilota, gestore e
-     * (se noleggio) azienda: best-effort, un errore qui non deve invalidare
-     * la prenotazione già confermata.
+     * Documenti fiscali + email con ricevuta: best-effort, un errore qui non
+     * invalida la prenotazione già confermata.
      */
     private static function emettiDocumentiENotifiche(int $prenotazioneId, int $utenteId): void
     {
@@ -758,15 +701,7 @@ class CPrenotazioneSessione
         }
     }
 
-    /**
-     * Registra la prenotazione in transazione e ritorna il codice identificativo
-     * (eccezione in caso di errore).
-     *
-     * @param array<string, mixed> $user
-     * @param array<string, mixed> $circuito
-     * @param array<string, mixed> $state
-     * @param array<string, mixed> $datiPagamento
-     */
+    /** Registra la prenotazione in transazione e ritorna il codice identificativo. */
     private static function salvaPrenotazione(array $user, array $circuito, array $state, array $datiPagamento): string
     {
         return FPersistentManager::transaction(function () use ($user, $circuito, $state, $datiPagamento): string {
@@ -794,8 +729,8 @@ class CPrenotazioneSessione
 
     /**
      * Lock pessimistico sulla sessione: serializza le prenotazioni concorrenti
-     * sullo stesso slot ed evita l'overbooking dell'ultimo posto disponibile.
-     * La rilettura sotto lock rende visibile un annullamento concorrente.
+     * ed evita l'overbooking dell'ultimo posto; la rilettura sotto lock
+     * intercetta un annullamento concorrente.
      */
     private static function sessioneBloccataPerPrenotazione(int $sessioneId, int $pilotaId): ESessione
     {
@@ -814,11 +749,9 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Importi base della prenotazione (tariffa della sessione letta sotto lock
-     * + eventuale noleggio): [prezzo base, importo noleggio].
+     * Importi base (tariffa della sessione letta sotto lock + eventuale
+     * noleggio): [prezzo base, importo noleggio].
      *
-     * @param array<string, mixed> $state
-     * @param array<string, mixed> $circuito
      * @return array{0: float, 1: float}
      */
     private static function importiBase(ESessione $sessione, array $state, array $circuito, int $pilotaId): array
@@ -834,12 +767,9 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Ricontrolla in transazione (con lock) il veicolo a noleggio: circuito,
-     * disponibilità, categoria ammessa, sanzioni dell'azienda e sovrapposizioni
-     * (un provvedimento può arrivare tra la scelta del veicolo e il saldo).
-     *
-     * @param array<string, mixed> $state
-     * @param array<string, mixed> $circuito
+     * Ricontrolla il veicolo sotto lock (circuito, disponibilità, categoria,
+     * sanzioni, sovrapposizioni): tra la scelta del veicolo e il saldo può
+     * cambiare tutto.
      */
     private static function veicoloBloccatoPerNoleggio(int $veicoloId, array $state, array $circuito, int $pilotaId): EVeicoloNoleggio
     {
@@ -867,11 +797,8 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Riferimento alla carta: riuso di una carta salvata (verificandone la
-     * proprietà) o memorizzazione della nuova SOLO se richiesto. Il CVV viene
-     * validato a monte ma NON viene mai memorizzato (best practice PCI-DSS).
-     *
-     * @param array<string, mixed> $datiPagamento
+     * Riusa una carta salvata (verificandone la proprietà) o memorizza la nuova
+     * solo se richiesto. Il CVV viene validato ma MAI memorizzato (PCI-DSS).
      */
     private static function risolviCartaCredito(array $datiPagamento, int $pilotaId): ?int
     {
@@ -900,12 +827,9 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Costruisce e persiste l'entità prenotazione (stato «confermata») con lo
-     * scorporo degli imponibili delegato al Model; ritorna il codice.
+     * Costruisce e salva la prenotazione («confermata»), con lo scorporo degli
+     * imponibili delegato al Model; ritorna il codice.
      *
-     * @param array<string, mixed> $user
-     * @param array<string, mixed> $state
-     * @param array<string, mixed> $datiPagamento
      * @param array{promozione: ?EPromozione, sconto: float} $promoInfo
      */
     private static function persistiPrenotazione(array $user, array $state, array $datiPagamento, int $boxAssegnato, float $prezzoBase, float $importoNoleggio, array $promoInfo): string
@@ -933,9 +857,8 @@ class CPrenotazioneSessione
     }
 
     /**
-     * Coordina la scelta della miglior promozione applicabile: carica le
-     * candidate (oggetti {@see EPromozione}) e delega al Model le due decisioni
-     * di dominio — applicabilità e calcolo dello sconto.
+     * Sceglie la promozione migliore: carica le candidate e delega al Model
+     * applicabilità e calcolo dello sconto.
      *
      * @return array{promozione: ?EPromozione, sconto: float}
      */

@@ -1,20 +1,11 @@
 <?php
 
 /**
- * CGestionePrenotazioniStorico ( caso d'uso
- * Gestione prenotazioni e storico)
- * attore: utente registrato/pilota).
+ * Controller del caso d'uso «Gestione prenotazioni e storico» (attore: pilota;
+ * elencaStorico e i download fatture servono anche i gestori).
  *
- * Operazioni di sistema (1 metodo per interazione utente-sistema):
- *  - elencaPrenotazioni()               → 1a/1b: elenco filtrabile attive/storico
- *  - visualizzaPrenotazione()           → 2a/2b: dettaglio con fatture scaricabili
- *  - modificaPrenotazione()             → 3a: form con i soli campi modificabili
- *  - aggiornaPrenotazione()             → 3b: salvataggio ed esito della modifica
- *  - annullaPrenotazione()              → 4a: motivazione + rimborso previsto
- *  - confermaAnnullamentoPrenotazione() → 4b: cancellazione definitiva
- *  - scaricaFatturaPdf() / scaricaDocumentoFiscale() → 2b: download delle fatture
- *    dal dettaglio (e dallo storico visibile a gestore/azienda di noleggio)
- *  - elencaStorico()                    → storico prenotazioni lato gestori
+ * Un metodo pubblico per ogni passo del flusso (vedi ROUTES, i tag 1a/2a/…
+ * sono sui singoli metodi).
  */
 class CGestionePrenotazioniStorico
 {
@@ -120,11 +111,7 @@ class CGestionePrenotazioniStorico
         );
     }
 
-    /**
-     * POST — salva le modifiche inviate dal form (3b).
-     *
-     * @param array<string, mixed> $nuovi_dati
-     */
+    /** POST — salva le modifiche inviate dal form (3b). */
     public function aggiornaPrenotazione(int|string $id_prenotazione = 0, array $nuovi_dati = []): void
     {
         self::richiediPilota();
@@ -166,11 +153,7 @@ class CGestionePrenotazioniStorico
         VPrenotazione::formCancellazione($pren, $rimborso, [], '', $rimborsoPerc);
     }
 
-    /**
-     * POST — elabora la cancellazione definitiva (4b).
-     *
-     * @param string $causa Motivazione; se vuota viene letta dal POST.
-     */
+    /** POST — cancellazione definitiva (4b); $causa vuota viene letta dal POST. */
     public function confermaAnnullamentoPrenotazione(int|string $id_prenotazione = 0, string $causa = ''): void
     {
         self::richiediPilota();
@@ -241,13 +224,11 @@ class CGestionePrenotazioniStorico
         return (int) ($_GET['id'] ?? post('id', '0'));
     }
 
-    /** @param list<array<string, mixed>> $righe @return list<int> */
     private static function idsPiloti(array $righe): array
     {
         return array_map(static fn(array $r): int => (int) $r['id'], $righe);
     }
 
-    /** @return array<string, mixed>|null */
     private static function caricaPrenotazione(int $id, int $pilotaId): ?array
     {
         try {
@@ -257,11 +238,7 @@ class CGestionePrenotazioniStorico
         }
     }
 
-    /**
-     * Prenotazione del pilota loggato, o redirect all'elenco con messaggio.
-     *
-     * @return array<string, mixed>
-     */
+    /** Prenotazione del pilota loggato, o redirect all'elenco con messaggio. */
     private static function prenotazioneOppureRedirect(int $id, int $pilotaId): array
     {
         if ($id <= 0) {
@@ -279,10 +256,9 @@ class CGestionePrenotazioniStorico
     }
 
     /**
-     * Percentuale e importo del rimborso in caso di annullamento (dipendono da
-     * assicurazione e anticipo rispetto alla sessione); decisione nel Model.
+     * [percentuale, importo] del rimborso in caso di annullamento; la
+     * decisione (assicurazione, anticipo) sta nel Model.
      *
-     * @param array<string, mixed> $pren
      * @return array{0: float|int, 1: float}
      */
     private static function rimborsoPrevisto(array $pren): array
@@ -296,7 +272,6 @@ class CGestionePrenotazioniStorico
         ];
     }
 
-    /** @param array<string, mixed> $pren */
     private static function erroreModificaConsentita(array $pren): ?string
     {
         if (($pren['stato'] ?? '') !== 'confermata') {
@@ -309,7 +284,6 @@ class CGestionePrenotazioniStorico
         return null;
     }
 
-    /** @param array<string, mixed> $pren */
     private static function erroreCancellazioneConsentita(array $pren): ?string
     {
         if (($pren['stato'] ?? '') !== 'confermata') {
@@ -322,11 +296,6 @@ class CGestionePrenotazioniStorico
         return null;
     }
 
-    /**
-     * @param array<string, mixed>|null $pren
-     * @param array<string, mixed> $dati
-     * @return list<string>
-     */
     private static function erroriAggiornamento(int $id, ?array $pren, array $dati): array
     {
         $errors = [];
@@ -348,7 +317,6 @@ class CGestionePrenotazioniStorico
         return $errors;
     }
 
-    /** @param array<string, mixed>|null $pren @return list<string> */
     private static function erroriAnnullamento(int $id, ?array $pren): array
     {
         $errors = [];
@@ -370,14 +338,7 @@ class CGestionePrenotazioniStorico
         return $errors;
     }
 
-    /**
-     * Esito della modifica: form ripopolato (se la prenotazione esiste) o
-     * schermata di esito negativo.
-     *
-     * @param array<string, mixed>|null $pren
-     * @param array<string, mixed> $dati
-     * @param list<string> $errors
-     */
+    /** Esito della modifica: form ripopolato se la prenotazione esiste, altrimenti esito negativo. */
     private static function mostraEsitoModifica(?array $pren, array $dati, array $errors): void
     {
         if ($pren) {
@@ -393,7 +354,6 @@ class CGestionePrenotazioniStorico
         VPrenotazione::confermaModifica(false, [], $errors);
     }
 
-    /** @param array<string, mixed> $pren */
     private static function eseguiCancellazione(int $id, int $pilotaId, string $causa, array $pren, float $rimborso, float|int $rimborsoPerc): void
     {
         try {
@@ -412,9 +372,6 @@ class CGestionePrenotazioniStorico
         }
     }
 
-    /** @param array<string, mixed> $pren
-     *  @return array<string, mixed>
-     */
     private static function datiFormDaPrenotazione(array $pren): array
     {
         return [
@@ -424,16 +381,11 @@ class CGestionePrenotazioniStorico
         ];
     }
 
-    /** @param array<string, mixed> $pren
-     *  @param array<string, mixed> $dati
-     *  @return array<string, mixed>
-     */
     private static function mergeForm(array $pren, array $dati): array
     {
         return array_merge(self::datiFormDaPrenotazione($pren), $dati);
     }
 
-    /** @return array<string, mixed> */
     private static function datiDaPost(): array
     {
         return [
@@ -444,8 +396,8 @@ class CGestionePrenotazioniStorico
     }
 
     /**
-     * Prenotazione e vista fattura in base al ruolo (pilota, gestore circuito,
-     * azienda di noleggio), con controllo di autorizzazione implicito nella query.
+     * Prenotazione e vista fattura in base al ruolo; l'autorizzazione è
+     * implicita nella query.
      *
      * @return array{pren: array<string, mixed>, vista: string}|null
      */

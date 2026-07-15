@@ -1,12 +1,11 @@
 <?php
 
 /**
- * Notifiche di dominio via email.
+ * Notifiche email di dominio.
  *
- * Ogni metodo compone le variabili, renderizza il template generico
- * `email/messaggio.tpl` e delega l'invio a {@see FMailer}. Tutto è best-effort:
- * gli errori vengono loggati ma non propagati, così una notifica fallita non
- * blocca mai l'operazione che l'ha generata (login, registrazione, prenotazione…).
+ * Ogni metodo prepara le variabili, renderizza email/messaggio.tpl e delega a
+ * FMailer. Tutto best-effort: gli errori finiscono nel log e una
+ * notifica fallita non blocca mai l'operazione che l'ha generata.
  */
 class FNotifiche
 {
@@ -119,11 +118,7 @@ class FNotifiche
 
     // -- Notifiche agli amministratori --------------------------------------
 
-    /**
-     * Notifica agli admin una nuova richiesta di affiliazione (gestore/azienda).
-     *
-     * @param array<string, mixed> $richiedente
-     */
+    /** Notifica agli admin una nuova richiesta di affiliazione (gestore/azienda). */
     public static function notificaAdminAffiliazione(array $richiedente, string $tipoLabel): void
     {
         if (self::disabilitato()) {
@@ -157,9 +152,8 @@ class FNotifiche
     }
 
     /**
-     * Notifica agli admin che un pilota ha documenti completi da convalidare.
-     * Invia solo se i documenti risultano effettivamente completi (entrambi
-     * caricati): copre sia il caricamento alla registrazione sia quello differito.
+     * Avvisa gli admin quando un pilota ha entrambi i documenti caricati e in
+     * attesa di convalida (alla registrazione o in un secondo momento).
      */
     public static function notificaAdminDocumentiPilota(int $pilotaId): void
     {
@@ -196,11 +190,9 @@ class FNotifiche
     // -- Prenotazione: pilota + gestore circuito + azienda noleggio ---------
 
     /**
-     * Invia, alla conferma di una prenotazione, le notifiche con la ricevuta PDF a:
-     *   - il pilota (sempre);
-     *   - il gestore del circuito (sempre);
-     *   - l'azienda di noleggio (solo se è stato noleggiato un veicolo).
-     * Ogni invio è isolato: il fallimento di uno non impedisce gli altri.
+     * Alla conferma di una prenotazione invia la ricevuta PDF a pilota, gestore
+     * del circuito e (solo se c'è un noleggio) azienda. Ogni invio è isolato:
+     * se uno fallisce gli altri partono comunque.
      */
     public static function prenotazioneCompletata(int $prenId, int $pilotaId): void
     {
@@ -325,11 +317,7 @@ class FNotifiche
 
     // -- Promozioni ---------------------------------------------------------
 
-    /**
-     * Notifica ai piloti idonei la creazione di una nuova promozione.
-     *
-     * @param array<string, mixed> $promo Riga promozione (come da FPromozione/entityToRow).
-     */
+    /** Avvisa i piloti idonei di una nuova promozione ($promo: riga promozione). */
     public static function promozionePiloti(array $promo): void
     {
         if (self::disabilitato()) {
@@ -381,7 +369,7 @@ class FNotifiche
 
     // -- Helper interni -----------------------------------------------------
 
-    /** @param array<string, mixed> $vars @param list<array{data:string,name:string,mime?:string}> $allegati */
+    /** @param list<array{data:string,name:string,mime?:string}> $allegati */
     private static function messaggio(
         string $toEmail,
         string $toName,
@@ -399,7 +387,6 @@ class FNotifiche
         return FMailer::invia($toEmail, $toName, $subject, $html, $allegati);
     }
 
-    /** @param array<string, mixed> $vars */
     private static function aGliAdmin(string $subject, array $vars): void
     {
         foreach (FAccount::loadAdminEmails() as $admin) {
@@ -412,19 +399,16 @@ class FNotifiche
         }
     }
 
-    /** @param array<string, mixed> $a */
     private static function nome(array $a): string
     {
         return trim((string) ($a['nome'] ?? '')) ?: 'utente';
     }
 
-    /** @param array<string, mixed> $a */
     private static function nomeCompleto(array $a): string
     {
         return trim((string) ($a['nome'] ?? '') . ' ' . (string) ($a['cognome'] ?? ''));
     }
 
-    /** @param array<string, mixed> $det */
     private static function periodo(array $det): string
     {
         $inizio = date_pretty((string) ($det['inizio_sessione'] ?? ''));
@@ -436,7 +420,6 @@ class FNotifiche
         return trim($inizio . ' – ' . $fine, ' –');
     }
 
-    /** @param array<string, mixed> $det */
     private static function importo(array $det): string
     {
         return money(
@@ -445,7 +428,6 @@ class FNotifiche
         );
     }
 
-    /** @param array<string, mixed> $promo */
     private static function scontoLabel(array $promo): string
     {
         $valore = (float) ($promo['valore'] ?? 0);
@@ -456,7 +438,6 @@ class FNotifiche
         return rtrim(rtrim(number_format($valore, 2, ',', '.'), '0'), ',') . '%';
     }
 
-    /** @param array<string, mixed> $promo */
     private static function validitaLabel(array $promo): string
     {
         $inizio = trim((string) ($promo['data_inizio'] ?? ''));

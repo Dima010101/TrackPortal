@@ -5,14 +5,10 @@ use PHPMailer\PHPMailer\PHPMailer;
 /**
  * Invio email della piattaforma (PHPMailer).
  *
- * Due trasporti, scelti dalla costante MAIL_TRANSPORT:
- *   - 'smtp' : invio reale via SMTP (host/porta/credenziali da costanti MAIL_*).
- *   - 'file' : scrive l'email come file leggibile in var/mail/ (sviluppo): così
- *              codici 2FA e link di conferma sono consultabili senza un server SMTP.
- *
- * Tutto è best-effort: nessun metodo lancia eccezioni verso il chiamante. Un
- * invio fallito viene loggato e restituisce false, senza mai interrompere il
- * flusso applicativo (registrazione, prenotazione, ecc.).
+ * Il trasporto lo sceglie MAIL_TRANSPORT: 'smtp' invia davvero (costanti
+ * MAIL_*), 'file' scrive l'email in var/mail/ — in sviluppo codici 2FA e link
+ * si leggono da lì, senza server SMTP. Best-effort: niente eccezioni verso il
+ * chiamante, un invio fallito viene loggato e restituisce false.
  */
 class FMailer
 {
@@ -48,11 +44,7 @@ class FMailer
         }
     }
 
-    /**
-     * Renderizza un template email Smarty in HTML.
-     *
-     * @param array<string, mixed> $vars
-     */
+    /** Renderizza un template email Smarty. */
     public static function render(string $template, array $vars): string
     {
         $smarty = TrackPortalSmarty::environment();
@@ -133,8 +125,8 @@ class FMailer
     }
 
     /**
-     * Trasporto di sviluppo: scrive l'email su file in var/mail/. Gli eventuali
-     * allegati vengono salvati come file affiancati, così sono apribili.
+     * Trasporto di sviluppo: scrive l'email in var/mail/; gli allegati vengono
+     * salvati come file a fianco.
      *
      * @param list<array{data: string, name: string, mime?: string}> $allegati
      */
