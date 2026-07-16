@@ -9,7 +9,7 @@
  */
 class CGestioneFlotta
 {
-    /** Azione «landing» invocata dall'URL «pulita» di sezione (senza azione). */
+    /** Azione invocata dall'URL di sezione (senza azione). */
     public const DEFAULT_ACTION = 'gestisciFlotta';
 
     /** Tabella rotte «pulite» (URL → metodo); risolta da CFrontController. */
@@ -74,7 +74,7 @@ class CGestioneFlotta
     {
         $aziendaId  = self::aziendaCorrente();
         $circuitoId = self::parseId($circuito, 'circuito_id');
-        $catFilter  = (string) ($_GET['cat'] ?? '');
+        $catFilter = (string) get('cat', '');
 
         [$circuitoRow, $errors] = self::caricaCircuito($circuitoId);
         $veicoli = $errors === []

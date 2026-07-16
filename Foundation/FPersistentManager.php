@@ -11,6 +11,10 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class FPersistentManager
 {
+    /**costanti */
+    public const CAMBIO_VALUTA_SUPPORTATE = \FCambioValuta::SUPPORTATE;
+
+    /**metodi di redirect */
     public static function circuitoLoadWithVeicoliCount(?int $limit = NULL): array
         {
             return \FCircuito::loadWithVeicoliCount($limit);
@@ -75,4 +79,41 @@ class FPersistentManager
     {
         return \FPromozione::loadByCircuitoConDettagli($circuitoId);
     }
+
+    public static function veicoloNoleggioLoadCircuitiByAzienda(int $aziendaId): array
+    {
+        return \FVeicoloNoleggio::loadCircuitiByAzienda($aziendaId);
+    }
+
+    public static function circuitoLoadElenco(): array
+    {
+        return \FCircuito::loadElenco();
+    }
+
+    public static function veicoloNoleggioCreaDaForm(int $aziendaId, array $dati): array
+    {
+        return \FVeicoloNoleggio::creaDaForm($aziendaId, $dati);
+    }
+
+    public static function veicoloNoleggioLoadByCircuitoAndAzienda(int $circuitoId, int $aziendaId, ?string $categoria = NULL): array
+    {
+        return \FVeicoloNoleggio::loadByCircuitoAndAzienda($circuitoId, $aziendaId, $categoria);
+    }
+
+    public static function veicoloNoleggioAggiornaDaForm(int $veicoloId, int $aziendaId, array $dati): array
+    {
+        return \FVeicoloNoleggio::aggiornaDaForm($veicoloId, $aziendaId, $dati);
+    }
+
+    public static function veicoloNoleggioDeleteByIdAndAzienda(int $id, int $aziendaId): void
+    {
+        \FVeicoloNoleggio::deleteByIdAndAzienda($id, $aziendaId);
+    }
+
+    public static function veicoloNoleggioTargaInUso(string $targa, int $escludiId = 0): bool
+    {
+        return \FVeicoloNoleggio::targaInUso($targa, $escludiId);
+    }
+
+
 }

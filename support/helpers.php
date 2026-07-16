@@ -1,5 +1,6 @@
-/*metodi di assistenza a tutte le classi */
 <?php
+
+/*metodi di assistenza a tutte le classi */
 
 /**
  *restituisce l'url inter di un path, serve per i link nelle email 
@@ -94,4 +95,40 @@ function targa_valida(string $targa): bool
 
     return preg_match('/^[A-Z]{2}[0-9]{3}[A-Z]{2}$/', $t) === 1
         || preg_match('/^[A-Z]{2}[0-9]{5}$/', $t) === 1;
+}
+
+/** POST sanitizzato come stringa*/
+function post(string $key, ?string $default = null): ?string
+{
+    return isset($_POST[$key]) ? trim((string)$_POST[$key]) : $default;
+}
+
+
+/** GET sanitizzato come stringa */
+function get(string $key, ?string $default = null): ?string
+{
+    return isset($_GET[$key]) ? trim((string)$_GET[$key]) : $default;
+}
+
+/** Aggiunge un flash message in sessione*/
+function flash(string $type, string $message): void
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        CAuth::startSession();
+    }
+    $_SESSION['_flash'][] = ['type' => $type, 'message' => $message];
+}
+
+/** Reindirizza ad un URL relativo all'app e termina lo script. */
+function redirect(string $path): never
+{
+    header('Location: ' . url($path));
+    exit;
+}
+
+/** Verifica un token CSRF inviato. */
+function csrf_check(?string $token): bool
+{
+    return !empty($token) && !empty($_SESSION['_csrf'])
+        && hash_equals($_SESSION['_csrf'], $token);
 }

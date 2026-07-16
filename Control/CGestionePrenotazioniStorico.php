@@ -30,8 +30,8 @@ class CGestionePrenotazioniStorico
     {
         self::richiediPilota();
         $user   = CAuth::utenteCorrente();
-        $filtro = (string) ($_GET['stato'] ?? 'attive');
-        $q      = trim((string) ($_GET['q'] ?? ''));
+        $filtro = (string) get('stato', 'attive');
+        $q = (string) get('q', '');
 
         if (!in_array($filtro, ['attive', 'storico'], true)) {
             flash('error', 'Filtro elenco non valido.');
