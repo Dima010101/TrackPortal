@@ -14,6 +14,8 @@ class FPersistentManager
     /**COSTANTI */
     public const CAMBIO_VALUTA_SUPPORTATE = \FCambioValuta::SUPPORTATE;
 
+    public const CIRCUITO_FOTO_MAX_FOTO = \FCircuitoFoto::MAX_FOTO;
+
     /**METODI PROPRI DEL MANAGER */
 
     private static ?EntityManagerInterface $em = null;
@@ -47,6 +49,12 @@ class FPersistentManager
         return self::find($entityClass, $id, LockMode::PESSIMISTIC_WRITE);
     }
 
+    /**cerca rispetto ad un criterio diverso da id */
+    public static function findOneBy(string $entityClass, array $criteria): ?object
+    {
+        return self::em()->getRepository($entityClass)->findOneBy($criteria);
+    }
+
     public static function persist(object $entity, bool $flush = true): void
     {
         self::em()->persist($entity);
@@ -54,6 +62,20 @@ class FPersistentManager
             self::em()->flush();
         }
     }
+
+    public static function flush(): void
+    {
+        self::em()->flush();
+    }
+
+    public static function remove(object $entity, bool $flush = true): void
+    {
+        self::em()->remove($entity);
+        if ($flush) {
+            self::em()->flush();
+        }
+    }
+
 
     /**
      * Persiste un oggetto Entity e ne restituisce l'identificatore
@@ -353,4 +375,45 @@ class FPersistentManager
     {
         return \FPromozione::loadAttivePerPrenotazione($circuitoId, $veicoloId);
     }
+
+    public static function gestoreCircuitiGetAffiliazione(int $uid): string
+    {
+        return \FGestoreCircuiti::getAffiliazione($uid);
+    }
+
+    public static function circuitoIsDelGestore(int $circuitoId, int $gestoreId): bool
+    {
+        return \FCircuito::isDelGestore($circuitoId, $gestoreId);
+    }
+
+    public static function circuitoLoadEntityById(int $id): ?\ECircuito
+    {
+        return \FCircuito::loadEntityById($id);
+    }
+
+    public static function circuitoFotoNormalizzaFiles(array $files): array
+    {
+        return \FCircuitoFoto::normalizzaFiles($files);
+    }
+
+    public static function circuitoFotoFileVuoto(array $file): bool
+    {
+        return \FCircuitoFoto::fileVuoto($file);
+    }
+
+    public static function circuitoFotoValidaUpload(array $file): string
+    {
+        return \FCircuitoFoto::validaUpload($file);
+    }
+
+    public static function circuitoFotoSalva(int $circuitoId, array $file): string
+    {
+        return \FCircuitoFoto::salva($circuitoId, $file);
+    }
+
+    public static function circuitoFotoElimina(?string $webPath): void
+    {
+        \FCircuitoFoto::elimina($webPath);
+    }
+
 }

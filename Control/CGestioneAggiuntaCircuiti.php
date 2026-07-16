@@ -416,7 +416,6 @@ class CGestioneAggiuntaCircuiti
     }
 
     /** controlla che gli upload siano validi e non superino il numero massimo di foto per il singolo circuito*/
-     */
     private static function validaFotoUploads(array $uploads, int $esistenti = 0): array
     {
         if ($uploads === []) {
