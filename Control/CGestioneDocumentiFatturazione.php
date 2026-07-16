@@ -88,3 +88,66 @@ class CGestioneDocumentiFatturazione
             );
         }
     }
+
+    /**
+     * Restituisce i dati del template di fattura per la vista richiesta, con eventuali errori
+     * da mostrare in pagina.
+     */
+    private static function datiTemplateFattura(string $vista): array
+    {
+        $errors = $_SESSION['_template_errors'] ?? [];
+        unset($_SESSION['_template_errors']);
+
+        [$meta, $anteprima] = self::metaEAnteprima($vista, $errors);
+
+        return [
+            'vista'      => $vista,
+            'etichetta'  => FPersistentManager::templateFatturaEtichettaVista($vista),
+            'is_fattura' => FPersistentManager::templateFatturaIsVistaFattura($vista),
+            'meta'       => $meta,
+            'anteprima'  => $anteprima,
+            'errors'     => $errors,
+            'viste'      => FPersistentManager::templateFatturaDescrizioneViste(),
+        ];
+    }
+
+    /**
+     * Restituisce i metadati e l'anteprima del template di fattura per la vista richiesta.
+     * In caso di errore, aggiunge un messaggio all'array $errors.
+     */
+    private static function metaEAnteprima(string $vista, array &$errors): array
+    {
+        try {
+            $meta = FPersistentManager::templateFatturaCaricaAttivo($vista);
+        } catch (Throwable) {
+            $errors[] = 'Impossibile caricare le informazioni sul template.';
+
+            return [[], null];
+        }
+
+        try {
+            return [$meta, FPersistentManager::templateFatturaAnteprimaRender($vista)];
+        } catch (Throwable $e) {
+            $errors[] = 'Anteprima non disponibile: ' . $e->getMessage();
+
+            return [$meta, null];
+        }
+    }
+
+    private static function urlSezioneTemplate(string $vista): string
+    {
+        return '/fatture?vista=' . rawurlencode($vista) . '#template-fattura';
+    }
+
+    private static function richiediAdmin(): void
+    {
+        CAuth::richiediRuolo(EAmministratore::$ruolo);
+    }
+
+    /** @param list<string> $errors */
+    private static function reindirizzaConErrori(string $vista, array $errors): void
+    {
+        $_SESSION['_template_errors'] = $errors;
+        redirect(self::urlSezioneTemplate($vista));
+    }
+}
