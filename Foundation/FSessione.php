@@ -272,4 +272,190 @@ class FSessione extends FRepository
             [':c' => $circuitoId, ':inizio' => $inizio, ':fine' => $fine]
         )->fetchAllAssociative();
     }
+
+    /** Verifica se esiste un conflitto di orari con altre sessioni */
+    public static function esisteConflitto(
+        int $circuitoId,
+        string $inizio,
+        string $fine,
+        ?int $escludiSessioneId = null
+    ): bool {
+        $sql = "SELECT COUNT(*) FROM sessione
+                WHERE circuito_id = :c
+                  AND stato <> 'annullata'
+                  AND inizio < :fine AND fine > :inizio";
+        $args = [':c' => $circuitoId, ':inizio' => $inizio, ':fine' => $fine];
+
+        if ($escludiSessioneId !== null && $escludiSessioneId > 0) {
+            $sql .= ' AND id <> :escludi';
+            $args[':escludi'] = $escludiSessioneId;
+        }
+
+        return (int) FDataBase::executeQuery($sql, $args)->fetchOne() > 0;
+    }
+
+    public static function esisteConflittoPrenotazione(int $circuitoId, string $inizio, string $fine): bool
+    {
+        return (int) FDataBase::executeQuery(
+            "SELECT COUNT(*) FROM prenotazione
+             WHERE circuito_id = :c
+               AND stato = 'confermata'
+               AND inizio_sessione < :fine AND fine_sessione > :inizio",
+            [':c' => $circuitoId, ':inizio' => $inizio, ':fine' => $fine]
+        )->fetchOne() > 0;
+    }
+
+    /** verifica conflitti con prenotazioni nel nuovo intervallo */
+    public static function esisteConflittoPrenotazioneEscludendoIntervallo(
+        int $circuitoId,
+        string $inizio,
+        string $fine,
+        string $escludiInizio,
+        string $escludiFine
+    ): bool {
+        return (int) FDataBase::executeQuery(
+            "SELECT COUNT(*) FROM prenotazione
+             WHERE circuito_id = :c
+               AND stato = 'confermata'
+               AND inizio_sessione < :fine AND fine_sessione > :inizio
+               AND NOT (inizio_sessione < :efine AND fine_sessione > :einizio)",
+            [
+                ':c'       => $circuitoId,
+                ':inizio'  => $inizio,
+                ':fine'    => $fine,
+                ':einizio' => $escludiInizio,
+                ':efine'   => $escludiFine,
+            ]
+        )->fetchOne() > 0;
+    }
+
+    /** Carica una sessione di un circuito in un orario preciso */
+    public static function loadByCircuitoSlot(int $circuitoId, string $data, string $ora): ?array
+    {
+        $inizio = $data . ' ' . $ora . ':00';
+        $r = FDataBase::executeQuery(
+            "SELECT * FROM sessione
+             WHERE circuito_id = :c AND inizio = :i AND stato <> 'annullata'
+             LIMIT 1",
+            [':c' => $circuitoId, ':i' => $inizio]
+        )->fetchAssociative();
+
+        return $r ?: null;
+    }
+
+    /** sessioni concluse nel mese corrente sui circuiti di un gestore.
+     *  Esclude le sessioni annullate.
+     */
+    public static function countConcluseMeseByGestore(int $gestoreId): int
+    {
+        return (int) FDataBase::executeQuery(
+            "SELECT COUNT(*) FROM sessione s
+             JOIN circuito c ON c.id = s.circuito_id
+             WHERE c.gestore_id = :g
+               AND s.stato <> 'annullata'
+               AND s.fine < NOW()
+               AND s.fine >= DATE_FORMAT(NOW(), '%Y-%m-01 00:00:00')",
+            [':g' => $gestoreId]
+        )->fetchOne();
+    }
+
+    /** conta prenotazioni attive */
+    public static function countPrenotazioniAttive(int $circuitoId, string $inizio, string $fine): int
+    {
+        return (int) FDataBase::executeQuery(
+            "SELECT COUNT(*) FROM prenotazione
+             WHERE circuito_id = :c
+               AND stato = 'confermata'
+               AND inizio_sessione < :fine AND fine_sessione > :inizio",
+            [':c' => $circuitoId, ':inizio' => $inizio, ':fine' => $fine]
+        )->fetchOne();
+    }
+
+    /** verifica se un pilota ha una prenotazione attiva in un determinato intervallo */
+    public static function pilotaHaPrenotazioneAttiva(
+        int $pilotaId,
+        int $circuitoId,
+        string $inizio,
+        string $fine
+    ): bool {
+        return (int) FDataBase::executeQuery(
+            "SELECT COUNT(*) FROM prenotazione
+             WHERE pilota_id = :p
+               AND circuito_id = :c
+               AND stato = 'confermata'
+               AND inizio_sessione < :fine AND fine_sessione > :inizio",
+            [':p' => $pilotaId, ':c' => $circuitoId, ':inizio' => $inizio, ':fine' => $fine]
+        )->fetchOne() > 0;
+    }
+
+    /** annulla una sessione del gestore, rimborsa i piloti prenotati e marca le rispettive prenotazioni come cancellate */
+    public static function annulla(int $sessioneId, int $gestoreId, string $causa): int
+    {
+        $causaNorm = trim($causa);
+        if ($causaNorm === '') {
+            throw new InvalidArgumentException("Indica una motivazione per l'annullamento della sessione.");
+        }
+        if (mb_strlen($causaNorm) > 255) {
+            throw new InvalidArgumentException('La motivazione non può superare 255 caratteri.');
+        }
+
+        $stornate  = [];
+        $causaPren = 'Sessione annullata dal gestore del circuito: ' . $causaNorm;
+
+        $count = FPersistentManager::transaction(static function () use (
+            $sessioneId, $gestoreId, $causaNorm, $causaPren, &$stornate
+        ): int {
+            $sessioneRow = self::loadByIdForGestore($sessioneId, $gestoreId);
+            if ($sessioneRow === null) {
+                throw new InvalidArgumentException('Sessione non trovata o non di tua proprietà.');
+            }
+            if (($sessioneRow['stato'] ?? '') === 'annullata') {
+                throw new InvalidArgumentException('La sessione è già stata annullata.');
+            }
+
+            $sessione = FPersistentManager::find(ESessione::class, $sessioneId);
+            if (!$sessione instanceof ESessione) {
+                throw new InvalidArgumentException('Sessione non trovata.');
+            }
+
+            $circuitoId = (int) $sessioneRow['circuito_id'];
+            $inizio     = (string) $sessioneRow['inizio'];
+            $fine       = (string) $sessioneRow['fine'];
+
+            $n = 0;
+            foreach (FPrenotazione::loadConfermateByIntervalloCircuito($circuitoId, $inizio, $fine) as $row) {
+                $pren = FPersistentManager::find(EPrenotazione::class, (int) ($row['id'] ?? 0));
+                if (!$pren instanceof EPrenotazione || $pren->getStato() !== 'confermata') {
+                    continue;
+                }
+                $pren->setStato('cancellata');
+                $pren->setCausaCancellazione($causaPren);
+                $pren->setRimborsoPrevisto($pren->getPrezzoImporto());
+                $stornate[] = ['id' => (int) $pren->getId(), 'importo' => $pren->getPrezzoImporto()];
+                $n++;
+            }
+
+            $sessione->setStato('annullata');
+            $sessione->setCausaAnnullamento($causaNorm);
+            FPersistentManager::flush();
+
+            return $n;
+        });
+
+        // rimborso dopo il commit
+        foreach ($stornate as $s) {
+            try {
+                FFatturazione::emettiNoteCreditoPerPrenotazione(
+                    $s['id'],
+                    $s['importo'],
+                    $s['importo'],
+                    $causaPren
+                );
+            } catch (Throwable $e) {
+                error_log('Emissione note di credito (sessione) fallita: ' . $e->getMessage());
+            }
+        }
+
+        return $count;
+    }
 }
