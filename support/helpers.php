@@ -23,6 +23,18 @@ function absolute_url(string $path = ''): string
     return $root . $rel;
 }
 
+/** Costruisce un URL assoluto rispetto alla base path dell'app. */
+function url(string $path = ''): string
+{
+    $base = rtrim((string) constant('APP_BASE_URL'), '/');
+    $path = '/' . ltrim($path, '/');
+    if ($base !== '' && ($path === $base || str_starts_with($path, $base . '/'))) {
+        return $path;
+    }
+
+    return $base . $path;
+}
+
 /** metodi per cambiare formato alla data */
 function date_pretty(string $sql): string
 {

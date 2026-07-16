@@ -200,4 +200,9 @@ class FPersistentManager
         return \FPrenotazione::loadDettaglioForAzienda($id, $aziendaId);
     }
 
+    public static function promozioneFindOwned(int $id, int $accountId): ?\EPromozione
+    {
+        return \FPromozione::findOwned($id, $accountId);
+    }
+
 }
