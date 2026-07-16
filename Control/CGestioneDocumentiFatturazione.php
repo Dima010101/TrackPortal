@@ -20,7 +20,7 @@ class CGestioneDocumentiFatturazione
 
         VAmministratore::fatture(
             FPersistentManager::prenotazioneLoadUltimePerFatturazione(20),
-            self::datiTemplateFattura(self::vistaRichiesta((string) ($_GET['vista'] ?? '')))
+            self::datiTemplateFattura( self::vistaRichiesta((string) get('vista', '')))
         );
     }
 
@@ -144,7 +144,9 @@ class CGestioneDocumentiFatturazione
         CAuth::richiediRuolo(EAmministratore::$ruolo);
     }
 
-    /** @param list<string> $errors */
+    /* Reindirizza alla pagina di gestione dei template con un messaggio flash di errore.
+     * I messaggi di errore vengono salvati in sessione e mostrati nella pagina di destinazione.
+     */
     private static function reindirizzaConErrori(string $vista, array $errors): void
     {
         $_SESSION['_template_errors'] = $errors;
