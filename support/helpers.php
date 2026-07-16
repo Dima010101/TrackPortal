@@ -235,3 +235,12 @@ function cc_cvv_valido(string $cvv): bool
 {
     return preg_match('/^\d{3,4}$/', trim($cvv)) === 1;
 }
+
+/**
+ * restituisce True se il browser ha rispedito il cookie di sessione (per vedere se sono abilitati)  */
+function cookie_sessione_presente(): bool
+{
+    $nome = defined('SESSION_NAME') ? (string) constant('SESSION_NAME') : session_name();
+
+    return $nome !== '' && !empty($_COOKIE[$nome]);
+}
