@@ -499,4 +499,29 @@ class FPersistentManager
     {
         return \FSessione::store($s);
     }
+
+    public static function configurazionePiattaformaPercentualeCommissione(): float
+    {
+        return \FConfigurazionePiattaforma::percentualeCommissione();
+    }
+
+    public static function configurazionePiattaformaAliquotaIva(): float
+    {
+        return \FConfigurazionePiattaforma::aliquotaIva();
+    }
+
+    public static function prenotazioneCountConAssicurazione(): int
+    {
+        return \FPrenotazione::countConAssicurazione();
+    }
+
+    public static function configurazionePiattaformaImpostaEconomici(float $prezzoAssicurazione, float $percentualeCommissione, float $aliquotaIva): bool
+    {
+        return \FConfigurazionePiattaforma::impostaEconomici($prezzoAssicurazione, $percentualeCommissione, $aliquotaIva);
+    }
+
+    public static function configurazionePiattaformaStoricoUltimi(int $limit = 10): array
+    {
+        return \FConfigurazionePiattaforma::storicoUltimi($limit);
+    }
 }
