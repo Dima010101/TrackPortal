@@ -144,3 +144,95 @@ class CSospensioneBan
     {
         return self::isNoleggio($ruolo) ? '/sanzioniNoleggio' : '/sanzioniGestore';
     }
+
+    /** Frase del requisito pilota nella validazione. */
+    private static function requisitoPilota(string $ruolo): string
+    {
+        return self::isNoleggio($ruolo)
+            ? 'deve aver noleggiato un tuo veicolo'
+            : 'deve aver prenotato su un tuo circuito';
+    }
+
+    /** Applica la sanzione via Foundation e chiude con esito o errori. */
+    private static function eseguiApplicazione(int $emittenteId, string $ruolo, array $dati): void
+    {
+        $tipo = (string) $dati['tipo'];
+        try {
+            $annullate = FPersistentManager::sanzioneApplica(
+                self::repo($ruolo),
+                $emittenteId,
+                (int) $dati['pilota_id'],
+                $tipo,
+                $tipo === ESanzionePilota::TIPO_SOSPENSIONE ? (string) $dati['data_fine'] : null,
+                (string) ($dati['motivo'] ?? '')
+            );
+        } catch (InvalidArgumentException $e) {
+            self::mostra($emittenteId, $ruolo, [$e->getMessage()], $dati);
+            return;
+        } catch (Throwable $e) {
+            self::mostra($emittenteId, $ruolo, ['Errore durante il salvataggio: ' . $e->getMessage()], $dati);
+            return;
+        }
+
+        flash('ok', self::esitoCrea($ruolo, $tipo === ESanzionePilota::TIPO_BAN ? 'Pilota bannato' : 'Pilota sospeso', $annullate));
+        redirect(self::rotta($ruolo));
+    }
+
+    /** Messaggio di conferma applicazione sanzione. */
+    private static function esitoCrea(string $ruolo, string $etichetta, int $annullate): string
+    {
+        if (self::isNoleggio($ruolo)) {
+            $coda = $annullate > 0
+                ? ' Annullati e rimborsati al 100% ' . $annullate
+                    . ($annullate === 1 ? ' noleggio futuro.' : ' noleggi futuri.')
+                : ' Nessun noleggio futuro da annullare.';
+
+            return $etichetta . ' dai tuoi veicoli a noleggio.' . $coda;
+        }
+
+        $coda = $annullate > 0
+            ? ' Annullate e rimborsate al 100% ' . $annullate
+                . ($annullate === 1 ? ' prenotazione futura.' : ' prenotazioni future.')
+            : ' Nessuna prenotazione futura da annullare.';
+
+        return $etichetta . ' sui tuoi circuiti.' . $coda;
+    }
+
+    /** Messaggio di conferma revoca. */
+    private static function esitoRevoca(string $ruolo): string
+    {
+        return self::isNoleggio($ruolo)
+            ? 'Sanzione revocata. Il pilota può di nuovo noleggiare i tuoi veicoli.'
+            : 'Sanzione revocata. Il pilota può di nuovo prenotare i tuoi circuiti.';
+    }
+
+    /** Coda del messaggio di modifica periodo. */
+    private static function codaModifica(string $ruolo, int $n): string
+    {
+        if ($n < 1) {
+            return '';
+        }
+
+        return self::isNoleggio($ruolo)
+            ? ' Annullati e rimborsati al 100% ' . $n . ($n === 1 ? ' noleggio.' : ' noleggi.')
+            : ' Annullate e rimborsate al 100% ' . $n . ($n === 1 ? ' prenotazione.' : ' prenotazioni.');
+    }
+
+    // ---- Macchina di controllo condivisa (helper privati) ----
+
+    /**
+     * Mostra la pagina di gestione dei ban e delle sospensioni, con eventuali errori e dati del form.
+    */
+    private static function mostra(int $emittenteId, string $ruolo, array $errors, array $form): void
+    {
+        $repo         = self::repo($ruolo);
+        $sanzioni     = FPersistentManager::sanzioneLoadByGestore($repo, $emittenteId);
+        $sanzionabili = FPersistentManager::sanzionePilotiSanzionabili($repo, $emittenteId);
+
+        if (self::isNoleggio($ruolo)) {
+            VSanzioniNoleggio::elenco($sanzioni, $sanzionabili, $errors, $form);
+            return;
+        }
+
+        VSanzioniGestore::elenco($sanzioni, $sanzionabili, $errors, $form);
+    }
