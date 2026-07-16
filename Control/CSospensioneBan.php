@@ -27,7 +27,7 @@ class CSospensioneBan
 
         // Preselezione del pilota quando si arriva dal pulsante "Sanziona"
         // (/...?pilota_id=N). Il tipo resta libero (ban o sospensione).
-        $pilotaId = (int) ($_GET['pilota_id'] ?? 0);
+        $pilotaId = (int) get('pilota_id', '0');
         self::mostra($emittenteId, $ruolo, [], $pilotaId > 0 ? ['pilota_id' => $pilotaId] : []);
     }
 
@@ -236,3 +236,88 @@ class CSospensioneBan
 
         VSanzioniGestore::elenco($sanzioni, $sanzionabili, $errors, $form);
     }
+
+     /**
+     * Valida i dati del form e restituisce un array di errori (vuoto se tutto ok).
+     */
+    private static function valida(array $dati, int $emittenteId, string $ruolo): array
+    {
+        return array_merge(
+            self::erroriPilota($dati, $emittenteId, $ruolo),
+            self::erroriTipoEPeriodo($dati),
+            self::erroriMotivo($dati)
+        );
+    }
+
+    /* Controlla che il pilota sia selezionato e sanzionabile.
+     * Restituisce un array di errori (vuoto se tutto ok).
+     */
+    private static function erroriPilota(array $dati, int $emittenteId, string $ruolo): array
+    {
+        $pilotaId = (int) ($dati['pilota_id'] ?? 0);
+        if ($pilotaId < 1) {
+            return ['Seleziona il pilota da sanzionare.'];
+        }
+        if (!FPersistentManager::sanzionePilotaSanzionabile(self::repo($ruolo), $emittenteId, $pilotaId)) {
+            return ['Il pilota selezionato non è valido: ' . self::requisitoPilota($ruolo)
+                . ' e non avere già una sanzione attiva.'];
+        }
+
+        return [];
+    }
+
+    /* Controlla che il tipo sia valido e, se sospensione, che la data di fine sia valida.
+     * Restituisce un array di errori (vuoto se tutto ok).
+     */
+    private static function erroriTipoEPeriodo(array $dati): array
+    {
+        $tipo = (string) ($dati['tipo'] ?? '');
+        if (!in_array($tipo, ESanzionePilota::TIPI, true)) {
+            return ['Seleziona il tipo di provvedimento (ban o sospensione).'];
+        }
+        if ($tipo !== ESanzionePilota::TIPO_SOSPENSIONE) {
+            return [];
+        }
+
+        $dataFine = trim((string) ($dati['data_fine'] ?? ''));
+        if ($dataFine === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataFine)) {
+            return ['Per la sospensione indica una data di fine valida.'];
+        }
+        try {
+            return new DateTimeImmutable($dataFine) < new DateTimeImmutable('today')
+                ? ['La fine della sospensione non può essere nel passato.']
+                : [];
+        } catch (Exception) {
+            return ['Data di fine sospensione non valida.'];
+        }
+    }
+
+    /* Controlla che la motivazione sia presente e non troppo lunga.
+     * Restituisce un array di errori (vuoto se tutto ok).
+     */
+    private static function erroriMotivo(array $dati): array
+    {
+        $motivo = trim((string) ($dati['motivo'] ?? ''));
+        if ($motivo === '') {
+            return ['Indica la motivazione del provvedimento.'];
+        }
+        if (mb_strlen($motivo) > 255) {
+            return ['La motivazione non può superare 255 caratteri.'];
+        }
+
+        return [];
+    }
+
+    /* Restituisce i dati del form letti da POST, con valori di default.
+     */
+    private static function datiDaPost(): array
+    {
+        return [
+            'csrf_token' => (string) post('csrf_token', ''),
+            'pilota_id'  => (int) post('pilota_id', '0'),
+            'tipo'       => (string) post('tipo', ''),
+            'data_fine'  => (string) post('data_fine', ''),
+            'motivo'     => (string) post('motivo', ''),
+        ];
+    }
+}
