@@ -455,3 +455,137 @@ class CGestioneAggiuntaPromozioni
             'soglia_prenotazioni' => $soglia !== null ? (string) $soglia : '',
         ];
     }
+
+    /*
+    * Converte l'oggetto promozione in un array di dati formattati per la visualizzazione 
+    * all'interno dei campi del modulo HTML.
+    */
+    private static function datiPromozioneDaPost(): array
+    {
+        return [
+            'csrf_token'           => (string) post('csrf_token', ''),
+            'titolo'               => (string) post('titolo', ''),
+            'descrizione'          => (string) post('descrizione', ''),
+            'tipo_sconto'          => (string) post('tipo_sconto', 'percentuale'),
+            'valore'               => (string) post('valore', ''),
+            'data_inizio'          => (string) post('data_inizio', ''),
+            'data_fine'            => (string) post('data_fine', ''),
+            'soglia_prenotazioni'  => (string) post('soglia_prenotazioni', ''),
+        ];
+    }
+
+    /*
+    * Valida i dati della promozione e restituisce un array di errori riscontrati.
+    * Se l'array è vuoto, significa che tutti i dati sono validi.
+    */
+    private static function validaDatiPromozione(array $dati): array
+    {
+        return array_merge(
+            self::erroriTitoloESoglia($dati),
+            self::erroriSconto($dati),
+            self::erroriPeriodo($dati)
+        );
+    }
+
+    /*
+    * Restituisce un array di errori relativi al titolo e alla soglia di prenotazioni.
+    */
+    private static function erroriTitoloESoglia(array $dati): array
+    {
+        $errors = [];
+        $titolo = trim((string) ($dati['titolo'] ?? ''));
+        if ($titolo === '') {
+            $errors[] = 'Il titolo della promozione è obbligatorio.';
+        } elseif (mb_strlen($titolo) > 150) {
+            $errors[] = 'Il titolo non può superare 150 caratteri.';
+        }
+
+        $sogliaRaw = trim((string) ($dati['soglia_prenotazioni'] ?? ''));
+        if ($sogliaRaw !== '' && (!ctype_digit($sogliaRaw) || (int) $sogliaRaw < 1)) {
+            $errors[] = 'La soglia prenotazioni deve essere un intero almeno pari a 1.';
+        }
+
+        return $errors;
+    }
+
+    /*
+    * Restituisce un array di errori relativi al tipo e al valore dello sconto.
+    */
+    private static function erroriSconto(array $dati): array
+    {
+        $errors     = [];
+        $tipoSconto = (string) ($dati['tipo_sconto'] ?? '');
+        if (!in_array($tipoSconto, ['percentuale', 'importo'], true)) {
+            $errors[] = 'Seleziona un tipo di sconto valido (percentuale o importo fisso).';
+        }
+
+        $valoreRaw = trim((string) ($dati['valore'] ?? ''));
+        if ($valoreRaw === '' || !is_numeric($valoreRaw)) {
+            $errors[] = 'Inserisci un valore di sconto numerico valido.';
+        } elseif ((float) $valoreRaw <= 0) {
+            $errors[] = 'Lo sconto deve essere maggiore di zero.';
+        } elseif ($tipoSconto === 'percentuale' && (float) $valoreRaw > 100) {
+            $errors[] = 'Lo sconto percentuale non può superare il 100%.';
+        }
+
+        return $errors;
+    }
+
+    /*
+    * Restituisce un array di errori relativi al periodo di validità.
+    */
+    private static function erroriPeriodo(array $dati): array
+    {
+        $dataInizio = trim((string) ($dati['data_inizio'] ?? ''));
+        $dataFine   = trim((string) ($dati['data_fine'] ?? ''));
+        if ($dataInizio === '' && $dataFine === '') {
+            return [];
+        }
+        if ($dataInizio === '' || $dataFine === '') {
+            return ['Per il periodo di validità servono sia data inizio sia data fine.'];
+        }
+        if (!self::isDataValida($dataInizio) || !self::isDataValida($dataFine)) {
+            return ['Inserisci date di validità nel formato corretto (AAAA-MM-GG).'];
+        }
+
+        try {
+            return new DateTimeImmutable($dataFine) < new DateTimeImmutable($dataInizio)
+                ? ['La data di fine promozione non può essere precedente alla data di inizio.']
+                : [];
+        } catch (Throwable) {
+            return ['Il periodo di validità della promozione non è valido.'];
+        }
+    }
+    
+    private static function isDataValida(string $data): bool
+    {
+        return (bool) preg_match('/^\d{4}-\d{2}-\d{2}$/', $data);
+    }
+
+    /*
+    * Crea un nuovo oggetto promozione con i dati forniti e lo salva nel database.
+    * Ritorna l'oggetto promozione appena creato.
+    */
+    private static function persistiPromozione(int $accountId, string $ruolo, int $entitaId, array $dati): EPromozione
+    {
+        $sogliaRaw = trim((string) ($dati['soglia_prenotazioni'] ?? ''));
+        $descr     = trim((string) ($dati['descrizione'] ?? ''));
+
+        $p = new EPromozione(
+            $accountId,
+            $ruolo === EGestoreNoleggio::$ruolo ? $entitaId : null,
+            $ruolo === EGestoreCircuiti::$ruolo ? $entitaId : null,
+            trim((string) $dati['titolo']), $descr !== '' ? $descr : null,
+            (string) $dati['tipo_sconto'], (float) $dati['valore'],
+            strtoupper(bin2hex(random_bytes(4))),
+            trim((string) ($dati['data_inizio'] ?? '')) ?: null,
+            trim((string) ($dati['data_fine'] ?? '')) ?: null,
+            'attiva', null, 'tutti',
+            $sogliaRaw !== '' ? (int) $sogliaRaw : null,
+            null, null
+        );
+        FPersistentManager::store($p);
+
+        return $p;
+    }
+}
