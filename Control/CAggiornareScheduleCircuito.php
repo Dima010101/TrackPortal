@@ -122,6 +122,18 @@ class CAggiornareScheduleCircuito
         VGestoreCircuiti::formAnnullaSessione($sessioneRow, self::pilotiConfermati($sessioneRow), $settimana, $errors, $causa);
     }
 
+    /**modifica dei dati di una sessione esistente */
+    private static function aggiornaSessioneEsistente(int $sessioneId, array $dati, string $inizio, string $fine, float $tariffa, ?string $note, string $stato): void
+    {
+        $entity = FPersistentManager::sessioneLoadEntityById($sessioneId);
+        if (!$entity instanceof ESessione || $entity->getCircuitoId() !== (int) $dati['circuito_id']) {
+            throw new RuntimeException('Sessione non trovata.');
+        }
+
+        $entity->aggiornaDettagli($inizio, $fine, $tariffa, (int) ($dati['posti_max'] ?? 1), (int) ($dati['posti_per_box'] ?? 1), $note, $stato);
+        FPersistentManager::flush();
+    }
+
     /**
      * carica lo slot della sessione richiesto.
      * Lo slot va bloccato solo se è prenotato ma non esiste una sessione da
@@ -286,5 +298,243 @@ class CAggiornareScheduleCircuito
         return CAuth::idUtenteConRuolo(EGestoreCircuiti::$ruolo);
     }
 
-    
+    /** mappatura dei dati da POST  */
+    private static function datiDaPost(): array
+    {
+        return [
+            'csrf_token'  => (string) post('csrf_token', ''),
+            'circuito_id' => (int) post('circuito_id', '0'),
+            'data'        => (string) post('data', ''),
+            'ora'         => (string) post('ora', ''),
+            'durata'      => (int) post('durata', '1'),
+            'tariffa_accesso' => (string) post('tariffa_accesso', ''),
+            'tariffa_valuta'  => (string) post('tariffa_valuta', 'EUR'),
+            'posti_max'   => (int) post('posti_max', '1'),
+            'posti_per_box' => (int) post('posti_per_box', '1'),
+            'note'        => (string) post('note', ''),
+            'sessione_id' => (int) post('sessione_id', '0'),
+            'settimana'   => (int) post('settimana', '0'),
+            'stato'       => (string) post('stato', 'privata'),
+        ];
+    }
+
+    /** validazione della sessione: prima i campi del form, poi la capienza dei box e i conflitti di pianificazione */
+    private static function validaSalvaSessione(array $dati, int $gestoreId): array
+    {
+        $parsed = self::parseDataOra((string) ($dati['data'] ?? ''), (string) ($dati['ora'] ?? ''));
+        if ($parsed === null) {
+            return ['Data o orario non validi.'];
+        }
+
+        $errors = array_merge(self::erroriCampiSessione($dati, $gestoreId), self::erroriTariffa($dati));
+        if ($errors === []) {
+            $errors = self::erroriCapienzaBox($dati);
+        }
+        if ($errors !== []) {
+            return $errors;
+        }
+
+        return self::erroriPianificazione($dati, $gestoreId, $parsed);
+    }
+
+    /** test errori relativi a circuito, durata, posti e categoria della sessione */
+    private static function erroriCampiSessione(array $dati, int $gestoreId): array
+    {
+        $errors = [];
+        if (!FPersistentManager::circuitoIsDelGestore((int) ($dati['circuito_id'] ?? 0), $gestoreId)) {
+            $errors[] = 'Circuito non valido o non di tua proprietà.';
+        }
+
+        $durata = (int) ($dati['durata'] ?? 1);
+        if ($durata < self::DURATA_MIN || $durata > self::DURATA_MAX) {
+            $errors[] = 'Durata non valida (da ' . self::DURATA_MIN . ' a ' . self::DURATA_MAX . ' ore).';
+        }
+        if ((int) ($dati['posti_max'] ?? 1) < 1 || (int) ($dati['posti_max'] ?? 1) > 99) {
+            $errors[] = 'Indica un numero di posti tra 1 e 99.';
+        }
+        if ((int) ($dati['posti_per_box'] ?? 1) < 1 || (int) ($dati['posti_per_box'] ?? 1) > 99) {
+            $errors[] = 'Indica un numero di posti per box tra 1 e 99.';
+        }
+        if (!in_array((string) ($dati['stato'] ?? 'privata'), ESessione::CATEGORIE, true)) {
+            $errors[] = 'Categoria sessione non valida (amatoriale, professionistica o privata).';
+        }
+
+        return $errors;
+    }
+
+    /** test di errori riguardo la tariffa di accesso */
+    private static function erroriTariffa(array $dati): array
+    {
+        $errors     = [];
+        $tariffaRaw = str_replace(',', '.', trim((string) ($dati['tariffa_accesso'] ?? '')));
+        if ($tariffaRaw === '') {
+            $errors[] = 'La tariffa di accesso della sessione è obbligatoria.';
+        } elseif (!is_numeric($tariffaRaw)) {
+            $errors[] = 'La tariffa di accesso deve essere un importo numerico valido.';
+        } elseif ((float) $tariffaRaw < 0) {
+            $errors[] = 'La tariffa di accesso non può essere negativa.';
+        }
+
+        $valuta = strtoupper(trim((string) ($dati['tariffa_valuta'] ?? 'EUR')));
+        if (!in_array($valuta, FPersistentManager::CAMBIO_VALUTA_SUPPORTATE, true)) {
+            $errors[] = 'Valuta della tariffa non valida.';
+        }
+
+        return $errors;
+    }
+
+    /** test che i posti massimi rientrino nella capacità dei box del circuito */
+    private static function erroriCapienzaBox(array $dati): array
+    {
+        $circuitoRow = FPersistentManager::circuitoLoadById((int) $dati['circuito_id']);
+        $numeroBox   = (int) ($circuitoRow['numero_box'] ?? 0);
+        if ($numeroBox < 1) {
+            return ['Il circuito non ha box configurati: imposta il numero di box nel profilo circuito.'];
+        }
+
+        $postiMax    = (int) ($dati['posti_max'] ?? 1);
+        $capacitaBox = $numeroBox * (int) ($dati['posti_per_box'] ?? 1);
+        if ($postiMax > $capacitaBox) {
+            return ['I posti massimi (' . $postiMax . ') superano la capacità dei box ('. $numeroBox . ' box × ' . (int) ($dati['posti_per_box'] ?? 1) . ' posti = ' . $capacitaBox . ').'];
+        }
+
+        return [];
+    }
+
+    /** test se ci sono conflitti di orario con sessioni e prenotazioni esistenti  */
+    private static function erroriPianificazione(array $dati, int $gestoreId, array $parsed): array
+    {
+        $inizio = $parsed[0] . ' ' . $parsed[1] . ':00';
+        try {
+            $fine = (new DateTimeImmutable($inizio))->modify('+' . (int) $dati['durata'] . ' hours')->format('Y-m-d H:i:s');
+        } catch (Exception) {
+            return ['Intervallo orario non valido.'];
+        }
+
+        $errors     = [];
+        $sessioneId = (int) ($dati['sessione_id'] ?? 0);
+        if (FPersistentManager::sessioneEsisteConflitto((int) $dati['circuito_id'], $inizio, $fine, $sessioneId > 0 ? $sessioneId : null)) {
+            $errors[] = 'Esiste già una sessione in questo intervallo.';
+        }
+        if ($sessioneId > 0) {
+            return array_merge($errors, self::erroriModificaSessione($dati, $gestoreId, $sessioneId, $inizio, $fine));
+        }
+        if (FPersistentManager::sessioneEsisteConflittoPrenotazione((int) $dati['circuito_id'], $inizio, $fine)) {
+            $errors[] = 'Intervallo in conflitto con una prenotazione attiva.';
+        }
+
+        return $errors;
+    }
+
+    /** test rispetto ai vincoli generici sulla modifica di una sessione esistente */
+    private static function erroriModificaSessione(array $dati, int $gestoreId, int $sessioneId, string $inizio, string $fine): array
+    {
+        $originale = FPersistentManager::sessioneLoadByIdForGestore($sessioneId, $gestoreId);
+        if ($originale === null) {
+            return ['Sessione non trovata o non di tua proprietà.'];
+        }
+
+        $prenotate = FPersistentManager::sessioneCountPrenotazioniAttive(
+            (int) $dati['circuito_id'],
+            (string) $originale['inizio'],
+            (string) $originale['fine']
+        );
+        $errors = self::erroriVincoliPrenotazioni($dati, $originale, $prenotate, $inizio, $fine);
+
+        if (FPersistentManager::sessioneEsisteConflittoPrenotazioneEscludendoIntervallo(
+            (int) $dati['circuito_id'], $inizio, $fine, (string) $originale['inizio'], (string) $originale['fine']
+        )) {
+            $errors[] = 'Il nuovo intervallo è in conflitto con prenotazioni di un\'altra sessione.';
+        }
+
+        return $errors;
+    }
+
+    /** test che i vincoli siano rispettati in base alle prenotazioni attive*/
+    private static function erroriVincoliPrenotazioni(array $dati, array $originale, int $prenotate, string $inizio, string $fine): array
+    {
+        $errors = [];
+        if ((int) $dati['posti_max'] < $prenotate) {
+            $errors[] = 'Non puoi ridurre i posti a ' . (int) $dati['posti_max'] . ': ci sono già ' . $prenotate
+                . ($prenotate === 1 ? ' prenotazione confermata.' : ' prenotazioni confermate.');
+        }
+        if ($prenotate > 0 && ($inizio !== (string) $originale['inizio'] || $fine !== (string) $originale['fine'])) {
+            $errors[] = 'Non puoi modificare la durata di una sessione con prenotazioni attive: '
+                . 'annulla la sessione (con rimborso ai piloti) per ripianificarla.';
+        }
+        if ($prenotate > 0 && (int) $dati['posti_per_box'] !== (int) ($originale['posti_per_box'] ?? 1)) {
+            $errors[] = 'Non puoi modificare i posti per box con prenotazioni attive: '
+                . 'annulla la sessione per ripianificarla.';
+        }
+
+        return $errors;
+    }
+
+    /** salvataggio della sessione nel database */
+    private static function persistiSessione(array $dati): void
+    {
+        [$inizio, $fine] = self::intervalloSessione($dati);
+        $note  = trim((string) ($dati['note'] ?? '')) ?: null;
+        $stato = (string) ($dati['stato'] ?? 'privata'); // categoria: amatoriale/professionistica/privata
+
+        // Tariffa nella valuta scelta dal gestore ma salvata SEMPRE in EUR
+        $tariffa = FPersistentManager::cambioValutaInEuro(
+            (float) str_replace(',', '.', trim((string) ($dati['tariffa_accesso'] ?? '0'))),
+            (string) ($dati['tariffa_valuta'] ?? 'EUR')
+        );
+
+        $sessioneId = (int) ($dati['sessione_id'] ?? 0);
+        if ($sessioneId > 0) {
+            self::aggiornaSessioneEsistente($sessioneId, $dati, $inizio, $fine, $tariffa, $note, $stato);
+            return;
+        }
+
+        FPersistentManager::sessioneStore(new ESessione(
+            (int) $dati['circuito_id'], $inizio, $fine, $tariffa,
+            (int) ($dati['posti_max'] ?? 1), (int) ($dati['posti_per_box'] ?? 1), $note, $stato
+        ));
+    }
+
+    /**definizione dell'intervallo di tempo per la sessione */
+    private static function intervalloSessione(array $dati): array
+    {
+        $parsed = self::parseDataOra((string) $dati['data'], (string) $dati['ora']);
+        if ($parsed === null) {
+            throw new RuntimeException('Data o orario non validi.');
+        }
+
+        $inizio = $parsed[0] . ' ' . $parsed[1] . ':00';
+
+        return [$inizio, (new DateTimeImmutable($inizio))->modify('+' . (int) $dati['durata'] . ' hours')->format('Y-m-d H:i:s')];
+    }
+
+    /** conversione di data e ora nel formato Y-m-d, H:i */
+    private static function parseDataOra(string $data, string $ora): ?array
+    {
+        $data = trim($data);
+        $ora  = trim($ora);
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data) || !preg_match('/^\d{2}:\d{2}$/', $ora)) {
+            return null;
+        }
+        if (!in_array($ora, FPersistentManager::SESSIONE_ORE_GIORNO, true)) {
+            return null;
+        }
+
+        try {
+            new DateTimeImmutable($data . ' ' . $ora . ':00');
+        } catch (Exception) {
+            return null;
+        }
+
+        return [$data, $ora];
+    }
+
+    /** verifica se lo slot è già occupato da una prenotazione attiva */
+    private static function slotBloccato(int $circuitoId, string $data, string $ora): bool
+    {
+        $inizio = $data . ' ' . $ora . ':00';
+        $fine   = (new DateTimeImmutable($inizio))->modify('+1 hour')->format('Y-m-d H:i:s');
+
+        return FPersistentManager::sessioneEsisteConflittoPrenotazione($circuitoId, $inizio, $fine);
+    }
 }
