@@ -99,5 +99,70 @@ class CDashboard
         );
     }
 
-    
+    /** Finestra temporale grafici (3 / 6 / 12 mesi) */
+    private static function finestraMesi(): int
+    {
+        $mesi = (int) ($_GET['mesi'] ?? 6);
+
+        return in_array($mesi, [3, 6, 12], true) ? $mesi : 6;
+    }
+
+    /** selezione circuito selezionato per il grafico tra quelli del gestore (0 = tutti)
+     */
+    private static function circuitoSelezionato(array $circuiti): int
+    {
+        $sel = (int) ($_GET['circuito'] ?? 0);
+        $ids = array_map(static fn (array $c): int => (int) $c['id'], $circuiti);
+
+        return $sel > 0 && in_array($sel, $ids, true) ? $sel : 0;
+    }
+
+    /** conteggio account per ruolo per grafico a torta */
+    private static function utentiPerRuolo(): array
+    {
+        return [
+            'pilota'           => FPersistentManager::countAll(EPilota::class),
+            'gestore_circuiti' => FPersistentManager::countAll(EGestoreCircuiti::class),
+            'gestore_noleggio' => FPersistentManager::countAll(EGestoreNoleggio::class),
+            'admin'            => FPersistentManager::countAll(EAmministratore::class),
+        ];
+    }
+
+    /** dati profilo del pilota (categoria, documenti, licenza, stato di scadenza) */
+    private static function profiloPilota(?EAccount $dominio): array
+    {
+        $profilo = [
+            'categoria' => '', 'licenza' => null, 'scadenza' => null,
+            'scadenza_label' => '', 'scadenza_stato' => '', 'giorni_scadenza' => null,
+            'documenti_stato' => '', 'documenti_completi' => true,
+        ];
+        if (!$dominio instanceof EPilota) {
+            return $profilo;
+        }
+
+        $profilo['categoria']          = $dominio->getCategoria();
+        $profilo['documenti_stato']    = $dominio->getDocumentiStato();
+        $profilo['documenti_completi'] = (string) $dominio->getCertificatoMedicoPath() !== ''
+            && (string) $dominio->getLicenzaPath() !== '';
+        $profilo['licenza']            = $dominio->getLicenza();
+        $profilo['scadenza']           = $dominio->getScadenzaLicenza();
+
+        return array_merge($profilo, self::statoScadenzaLicenza($dominio->getScadenzaLicenza()));
+    }
+
+    /** definizione etichetta e stato della scadenza licenza (scaduta / in scadenza a 30 giorni / ok) */
+    private static function statoScadenzaLicenza(?string $scadenza): array
+    {
+        if (!is_string($scadenza) || $scadenza === '' || strtotime($scadenza) === false) {
+            return [];
+        }
+
+        $giorni = (int) (new DateTimeImmutable('today'))->diff(new DateTimeImmutable($scadenza))->format('%r%a');
+
+        return [
+            'scadenza_label'  => date('d/m/Y', (int) strtotime($scadenza)),
+            'giorni_scadenza' => $giorni,
+            'scadenza_stato'  => $giorni < 0 ? 'scaduta' : ($giorni <= 30 ? 'in_scadenza' : 'ok'),
+        ];
+    }
 }
