@@ -77,9 +77,7 @@ class FPersistentManager
     }
 
 
-    /**
-     * Persiste un oggetto Entity e ne restituisce l'identificatore
-     */
+    /**Persiste un oggetto Entity e ne restituisce l'identificatore */
     public static function store(object $entity): mixed
     {
         if ($entity instanceof EVeicoloNoleggio) {
@@ -93,6 +91,27 @@ class FPersistentManager
 
         return count($ids) === 1 ? reset($ids) : ($ids === [] ? null : $ids);
     }
+
+    /** converte entity in un array associativo per il salvataggio nel db */
+    public static function entityToRow(object $entity): array
+    {
+        $meta = self::em()->getClassMetadata($entity::class);
+        $row  = [];
+
+        foreach ($meta->getFieldNames() as $field) {
+            $row[$meta->getColumnName($field)] = $meta->getFieldValue($entity, $field);
+        }
+
+        // Gerarchie ORM (es. EAccount, JOINED): la colonna discriminatore
+        // (es. `ruolo`) appartiene alla riga ma non ai field mappati; il suo
+        // valore viene ricavato dai metadati Doctrine
+        if ($meta->discriminatorColumn !== null && $meta->discriminatorValue !== null) {
+            $row[$meta->discriminatorColumn['name']] = $meta->discriminatorValue;
+        }
+
+        return $row;
+    }
+
 
 
     /**METODI DI REDIRECT ALLE SINGOLE REPOSITORY */
@@ -415,5 +434,16 @@ class FPersistentManager
     {
         \FCircuitoFoto::elimina($webPath);
     }
+
+    public static function notifichePromozionePiloti(array $promo): void
+    {
+        \FNotifiche::promozionePiloti($promo);
+    }
+
+    public static function promozioneStore(\EPromozione $p): int
+    {
+        return \FPromozione::store($p);
+    }
+
 
 }
