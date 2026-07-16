@@ -68,3 +68,79 @@ class CSospensioneBan
 
         redirect(self::rotta($ruolo));
     }
+
+    /*
+        * POST — aggiorna il periodo di una sanzione attiva dell'emittente.
+        * Il parametro $id è opzionale, se non viene passato viene letto da POST.
+        */
+    public function aggiornaPeriodoSanzione(int|string $id = 0): void
+    {
+        [$emittenteId, $ruolo] = self::emittente();
+        self::richiediPostConCsrf($ruolo);
+
+        $sanzioneId = (int) ($id ?: post('sanzione_id', '0'));
+        $dataFine   = trim((string) post('data_fine', ''));
+
+        try {
+            $n = FPersistentManager::sanzioneModificaPeriodo(
+                self::repo($ruolo),
+                $sanzioneId,
+                $emittenteId,
+                (string) post('tipo', ''),
+                $dataFine !== '' ? $dataFine : null
+            );
+            flash('ok', 'Periodo del provvedimento aggiornato.' . self::codaModifica($ruolo, $n));
+        } catch (InvalidArgumentException $e) {
+            flash('error', $e->getMessage());
+        } catch (Throwable) {
+            flash('error', "Errore durante l'aggiornamento. Riprova tra qualche istante.");
+        }
+
+        redirect(self::rotta($ruolo));
+    }
+
+    // ---- Parti dipendenti dall'emittente (risolte in base al ruolo) ----
+
+    /*     * Restituisce l'ID e il ruolo dell'emittente (gestore o noleggio).
+     * L'emittente deve essere autenticato e avere il ruolo corretto.
+     */
+    private static function emittente(): array
+    {
+        CAuth::richiediRuolo([EGestoreCircuiti::$ruolo, EGestoreNoleggio::$ruolo]);
+        $user = CAuth::utenteCorrente();
+
+        return [(int) $user['id'], (string) $user['ruolo']];
+    }
+
+    /** Blocca le richieste non-POST o senza token valido (redirect alla sezione). */
+    private static function richiediPostConCsrf(string $ruolo): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect(self::rotta($ruolo));
+        }
+        if (!csrf_check(post('csrf_token'))) {
+            flash('error', 'Token di sicurezza non valido. Ricarica la pagina e riprova.');
+            redirect(self::rotta($ruolo));
+        }
+    }
+
+    private static function isNoleggio(string $ruolo): bool
+    {
+        return $ruolo === EGestoreNoleggio::$ruolo;
+    }
+
+    /* Restituisce il nome della repository da usare per le sanzioni, in base al ruolo dell'emittente.
+     */
+    private static function repo(string $ruolo): string
+    {
+        return self::isNoleggio($ruolo)
+            ? FPersistentManager::SANZIONE_PILOTA_NOLEGGIO_CLASS
+            : FPersistentManager::SANZIONE_PILOTA_CLASS;
+    }
+
+    /*  Restituisce la rotta da usare per il redirect dopo un'azione, in base al ruolo dell'emittente.
+     */
+    private static function rotta(string $ruolo): string
+    {
+        return self::isNoleggio($ruolo) ? '/sanzioniNoleggio' : '/sanzioniGestore';
+    }
