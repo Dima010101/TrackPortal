@@ -13,8 +13,8 @@ class FPersistentManager
 {
     /**COSTANTI */
     public const CAMBIO_VALUTA_SUPPORTATE = \FCambioValuta::SUPPORTATE;
-
     public const CIRCUITO_FOTO_MAX_FOTO = \FCircuitoFoto::MAX_FOTO;
+    public const SESSIONE_ORE_GIORNO = \FSessione::ORE_GIORNO;
 
     /**METODI PROPRI DEL MANAGER */
 
