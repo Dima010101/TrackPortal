@@ -445,5 +445,58 @@ class FPersistentManager
         return \FPromozione::store($p);
     }
 
+    public static function sessioneLoadEntityById(int $id): ?\ESessione
+    {
+        return \FSessione::loadEntityById($id);
+    }
 
+    public static function sessioneLoadByCircuitoSlot(int $circuitoId, string $data, string $ora): ?array
+    {
+        return \FSessione::loadByCircuitoSlot($circuitoId, $data, $ora);
+    }
+
+    public static function prenotazioneLoadBySessioneCircuito(int $circuitoId, string $inizio, string $fine): array
+    {
+        return \FPrenotazione::loadBySessioneCircuito($circuitoId, $inizio, $fine);
+    }
+
+    public static function sessioneLoadByIdForGestore(int $id, int $gestoreId): ?array
+    {
+        return \FSessione::loadByIdForGestore($id, $gestoreId);
+    }
+
+    public static function prenotazioneLoadConfermateByIntervalloCircuito(int $circuitoId, string $inizio, string $fine): array
+    {
+        return \FPrenotazione::loadConfermateByIntervalloCircuito($circuitoId, $inizio, $fine);
+    }
+
+    public static function sessioneAnnulla(int $sessioneId, int $gestoreId, string $causa): int
+    {
+        return \FSessione::annulla($sessioneId, $gestoreId, $causa);
+    }
+
+    public static function sessioneEsisteConflitto(int $circuitoId, string $inizio, string $fine, ?int $escludiSessioneId = NULL): bool
+    {
+        return \FSessione::esisteConflitto($circuitoId, $inizio, $fine, $escludiSessioneId);
+    }
+
+    public static function sessioneEsisteConflittoPrenotazione(int $circuitoId, string $inizio, string $fine): bool
+    {
+        return \FSessione::esisteConflittoPrenotazione($circuitoId, $inizio, $fine);
+    }
+
+    public static function sessioneEsisteConflittoPrenotazioneEscludendoIntervallo(int $circuitoId, string $inizio, string $fine, string $escludiInizio, string $escludiFine): bool
+    {
+        return \FSessione::esisteConflittoPrenotazioneEscludendoIntervallo($circuitoId, $inizio, $fine, $escludiInizio, $escludiFine);
+    }
+
+    public static function cambioValutaInEuro(float $importo, string $valuta): float
+    {
+        return \FCambioValuta::inEuro($importo, $valuta);
+    }
+
+    public static function sessioneStore(\ESessione $s): int
+    {
+        return \FSessione::store($s);
+    }
 }
