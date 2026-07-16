@@ -30,8 +30,8 @@ class CGestionePrenotazioniStorico
     {
         self::richiediPilota();
         $user   = CAuth::utenteCorrente();
-        $filtro = (string) ($_GET['stato'] ?? 'attive');
-        $q      = trim((string) ($_GET['q'] ?? ''));
+        $filtro = (string) get('stato', 'attive');
+        $q = (string) get('q', '');
 
         if (!in_array($filtro, ['attive', 'storico'], true)) {
             flash('error', 'Filtro elenco non valido.');
@@ -398,8 +398,6 @@ class CGestionePrenotazioniStorico
     /**
      * Prenotazione e vista fattura in base al ruolo; l'autorizzazione è
      * implicita nella query.
-     *
-     * @return array{pren: array<string, mixed>, vista: string}|null
      */
     private static function caricaPerRuolo(string $ruolo, int $uid, int $id): ?array
     {

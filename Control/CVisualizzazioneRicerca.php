@@ -25,7 +25,7 @@ class CVisualizzazioneRicerca
             redirect('/dashboard');
         }
         /**se digitato qualcosa nella barra di ricerca rimando a cercacircuiti */
-        if (trim((string) ($_GET['q'] ?? '')) !== '') {
+        if (get('q', '') !== '') {
             $this->cercaCircuiti();
             return;
         }
@@ -36,7 +36,7 @@ class CVisualizzazioneRicerca
     /** funzione per cercare i circuiti */
     public function cercaCircuiti(string $keyword = ''): void
     {
-        $keyword = trim($keyword !== '' ? $keyword : (string) ($_GET['q'] ?? ''));
+        $keyword = $keyword !== '' ? trim($keyword) : (string) get('q', '');
 
         VCircuito::mostraElenco(
             self::filtraPerParola(FPersistentManager::circuitoLoadWithVeicoliCount(), $keyword),
@@ -47,7 +47,7 @@ class CVisualizzazioneRicerca
     /**elenco dei circuiti completo*/
     public function elencaCircuiti(): void
     {
-        if (trim((string) ($_GET['q'] ?? '')) !== '') {
+        if (get('q', '') !== '') {
             $this->cercaCircuiti();
             return;
         }

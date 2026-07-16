@@ -11,6 +11,69 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class FPersistentManager
 {
+    /**COSTANTI */
+    public const CAMBIO_VALUTA_SUPPORTATE = \FCambioValuta::SUPPORTATE;
+
+    /**METODI PROPRI DEL MANAGER */
+
+    private static ?EntityManagerInterface $em = null;
+
+    /**Restituisce l'EntityManager di Doctrine*/
+    public static function em(): EntityManagerInterface
+    {
+        return self::$em ??= FEntityManager::getInstance();
+    }
+
+    public static function connection(): Connection
+    {
+        return self::em()->getConnection();
+    }
+
+    /**wrappa in transaction usando metodo di doctrine*/
+    public static function transaction(callable $callback): mixed
+    {
+        return self::em()->wrapInTransaction(
+            static fn (): mixed => $callback(self::em())
+        );
+    }
+
+    public static function find(string $entityClass, int|string $id, LockMode|int|null $lock = null): ?object
+    {
+        return self::em()->find($entityClass, $id, $lock);
+    }
+
+    public static function findForUpdate(string $entityClass, int|string $id): ?object
+    {
+        return self::find($entityClass, $id, LockMode::PESSIMISTIC_WRITE);
+    }
+
+    public static function persist(object $entity, bool $flush = true): void
+    {
+        self::em()->persist($entity);
+        if ($flush) {
+            self::em()->flush();
+        }
+    }
+
+    /**
+     * Persiste un oggetto Entity e ne restituisce l'identificatore
+     */
+    public static function store(object $entity): mixed
+    {
+        if ($entity instanceof EVeicoloNoleggio) {
+            return FVeicoloNoleggio::store($entity);
+        }
+
+        self::persist($entity);
+
+        // L'identificatore generato viene letto dai metadati Doctrine
+        $ids = self::em()->getClassMetadata($entity::class)->getIdentifierValues($entity);
+
+        return count($ids) === 1 ? reset($ids) : ($ids === [] ? null : $ids);
+    }
+
+
+    /**METODI DI REDIRECT ALLE SINGOLE REPOSITORY */
     public static function circuitoLoadWithVeicoliCount(?int $limit = NULL): array
         {
             return \FCircuito::loadWithVeicoliCount($limit);
@@ -74,5 +137,220 @@ class FPersistentManager
     public static function promozioneLoadByCircuitoConDettagli(int $circuitoId): array
     {
         return \FPromozione::loadByCircuitoConDettagli($circuitoId);
+    }
+
+    public static function veicoloNoleggioLoadCircuitiByAzienda(int $aziendaId): array
+    {
+        return \FVeicoloNoleggio::loadCircuitiByAzienda($aziendaId);
+    }
+
+    public static function circuitoLoadElenco(): array
+    {
+        return \FCircuito::loadElenco();
+    }
+
+    public static function veicoloNoleggioCreaDaForm(int $aziendaId, array $dati): array
+    {
+        return \FVeicoloNoleggio::creaDaForm($aziendaId, $dati);
+    }
+
+    public static function veicoloNoleggioLoadByCircuitoAndAzienda(int $circuitoId, int $aziendaId, ?string $categoria = NULL): array
+    {
+        return \FVeicoloNoleggio::loadByCircuitoAndAzienda($circuitoId, $aziendaId, $categoria);
+    }
+
+    public static function veicoloNoleggioAggiornaDaForm(int $veicoloId, int $aziendaId, array $dati): array
+    {
+        return \FVeicoloNoleggio::aggiornaDaForm($veicoloId, $aziendaId, $dati);
+    }
+
+    public static function veicoloNoleggioDeleteByIdAndAzienda(int $id, int $aziendaId): void
+    {
+        \FVeicoloNoleggio::deleteByIdAndAzienda($id, $aziendaId);
+    }
+
+    public static function veicoloNoleggioTargaInUso(string $targa, int $escludiId = 0): bool
+    {
+        return \FVeicoloNoleggio::targaInUso($targa, $escludiId);
+    }
+
+    public static function prenotazioneLoadByPilotaFiltro(int $pilotaId, string $filtro, string $q = ''): array
+    {
+        return \FPrenotazione::loadByPilotaFiltro($pilotaId, $filtro, $q);
+    }
+
+    public static function prenotazioneLoadByGestoreForFatturazione(int $gestoreId, string $q = ''): array
+    {
+        return \FPrenotazione::loadByGestoreForFatturazione($gestoreId, $q);
+    }
+
+    public static function sanzionePilotaPilotiSanzionabili(int $gestoreId): array
+    {
+        return \FSanzionePilota::pilotiSanzionabili($gestoreId);
+    }
+
+    public static function prenotazioneLoadByAziendaForFatturazione(int $aziendaId, string $q = ''): array
+    {
+        return \FPrenotazione::loadByAziendaForFatturazione($aziendaId, $q);
+    }
+
+    public static function sanzionePilotaNoleggioPilotiSanzionabili(int $gestoreId): array
+    {
+        return \FSanzionePilotaNoleggio::pilotiSanzionabili($gestoreId);
+    }
+
+    public static function documentoFiscaleFatturePilotaPerPrenotazioni(array $prenIds, int $pilotaId): array
+    {
+        return \FDocumentoFiscale::fatturePilotaPerPrenotazioni($prenIds, $pilotaId);
+    }
+
+    public static function configurazionePiattaformaPrezzoAssicurazione(): float
+    {
+        return \FConfigurazionePiattaforma::prezzoAssicurazione();
+    }
+
+    public static function prenotazioneAggiornaPrenotazione(int $id, int $pilotaId, array $dati): array
+    {
+        return \FPrenotazione::aggiornaPrenotazione($id, $pilotaId, $dati);
+    }
+
+    public static function fatturaPdfInvia(array $pren, string $vista): never
+    {
+        \FFatturaPdf::invia($pren, $vista);
+    }
+
+    public static function documentoFiscaleLoadById(int $id): ?array
+    {
+        return \FDocumentoFiscale::loadById($id);
+    }
+
+    public static function documentoFiscaleUtenteAutorizzato(array $doc, string $ruolo, int $id): bool
+    {
+        return \FDocumentoFiscale::utenteAutorizzato($doc, $ruolo, $id);
+    }
+
+    public static function fatturaPdfInviaDocumento(array $doc, array $righe): never
+    {
+        \FFatturaPdf::inviaDocumento($doc, $righe);
+    }
+
+    public static function documentoFiscaleLoadRighe(int $documentoId): array
+    {
+        return \FDocumentoFiscale::loadRighe($documentoId);
+    }
+
+    public static function prenotazioneLoadDettaglio(int $id, int $pilotaId): ?array
+    {
+        return \FPrenotazione::loadDettaglio($id, $pilotaId);
+    }
+
+    public static function prenotazioneCancella(int $id, int $pilotaId, string $causa, float $rimborso): void
+    {
+        \FPrenotazione::cancella($id, $pilotaId, $causa, $rimborso);
+    }
+
+    public static function prenotazioneLoadDettaglioForGestore(int $id, int $gestoreId): ?array
+    {
+        return \FPrenotazione::loadDettaglioForGestore($id, $gestoreId);
+    }
+
+    public static function prenotazioneLoadDettaglioForAzienda(int $id, int $aziendaId): ?array
+    {
+        return \FPrenotazione::loadDettaglioForAzienda($id, $aziendaId);
+    }
+
+    public static function promozioneFindOwned(int $id, int $accountId): ?\EPromozione
+    {
+        return \FPromozione::findOwned($id, $accountId);
+    }
+
+    public static function cambioValutaTassi(): array
+    {
+        return \FCambioValuta::tassi();
+    }
+
+    public static function pilotaLoadEntityByUtente(int $uid): ?\EPilota
+    {
+        return \FPilota::loadEntityByUtente($uid);
+    }
+
+    public static function sessioneLoadById(int $id): ?\ESessione
+    {
+        return \FSessione::loadById($id);
+    }
+
+    public static function sessioneCountPrenotazioniAttive(int $circuitoId, string $inizio, string $fine): int
+    {
+        return \FSessione::countPrenotazioniAttive($circuitoId, $inizio, $fine);
+    }
+
+    public static function veicoloNoleggioLoadById(int $id): ?array
+    {
+        return \FVeicoloNoleggio::loadById($id);
+    }
+
+    public static function sanzionePilotaNoleggioPilotaBloccatoSuAzienda(int $pilotaId, int $aziendaId): ?array
+    {
+        return \FSanzionePilotaNoleggio::pilotaBloccatoSuAzienda($pilotaId, $aziendaId);
+    }
+
+    public static function veicoloNoleggioPrenotatoInIntervallo(int $veicoloId, string $inizio, string $fine): bool
+    {
+        return \FVeicoloNoleggio::prenotatoInIntervallo($veicoloId, $inizio, $fine);
+    }
+
+    public static function sanzionePilotaPilotaBloccatoSuCircuito(int $pilotaId, int $circuitoId): ?array
+    {
+        return \FSanzionePilota::pilotaBloccatoSuCircuito($pilotaId, $circuitoId);
+    }
+
+    public static function sessionePilotaHaPrenotazioneAttiva(int $pilotaId, int $circuitoId, string $inizio, string $fine): bool
+    {
+        return \FSessione::pilotaHaPrenotazioneAttiva($pilotaId, $circuitoId, $inizio, $fine);
+    }
+
+    public static function cartaCreditoLoadByPilota(int $pilotaId): array
+    {
+        return \FCartaCredito::loadByPilota($pilotaId);
+    }
+
+    public static function cartaCreditoFindOwned(int $id, int $pilotaId): ?\ECartaCredito
+    {
+        return \FCartaCredito::findOwned($id, $pilotaId);
+    }
+
+    public static function prenotazioneLoadDettaglioByCodice(string $codice, int $pilotaId): ?array
+    {
+        return \FPrenotazione::loadDettaglioByCodice($codice, $pilotaId);
+    }
+
+    public static function fatturazioneEmettiPerPrenotazione(int $prenId): void
+    {
+        \FFatturazione::emettiPerPrenotazione($prenId);
+    }
+
+    public static function notifichePrenotazioneCompletata(int $prenId, int $pilotaId): void
+    {
+        \FNotifiche::prenotazioneCompletata($prenId, $pilotaId);
+    }
+
+    public static function prenotazioneAssegnaBox(int $circuitoId, string $inizio, string $fine, int $numeroBoxCircuito, int $postiPerBox): int
+    {
+        return \FPrenotazione::assegnaBox($circuitoId, $inizio, $fine, $numeroBoxCircuito, $postiPerBox);
+    }
+
+    public static function cartaCreditoSalva(int $pilotaId, string $nomeTitolare, string $cognomeTitolare, string $numeroMasked, string $dataScadenza): int
+    {
+        return \FCartaCredito::salva($pilotaId, $nomeTitolare, $cognomeTitolare, $numeroMasked, $dataScadenza);
+    }
+
+    public static function prenotazioneCountStoricheByPilotaCircuito(int $pilotaId, int $circuitoId): int
+    {
+        return \FPrenotazione::countStoricheByPilotaCircuito($pilotaId, $circuitoId);
+    }
+
+    public static function promozioneLoadAttivePerPrenotazione(int $circuitoId, ?int $veicoloId = NULL): array
+    {
+        return \FPromozione::loadAttivePerPrenotazione($circuitoId, $veicoloId);
     }
 }
