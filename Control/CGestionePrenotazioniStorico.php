@@ -54,7 +54,7 @@ class CGestionePrenotazioniStorico
         CAuth::richiediRuolo([EGestoreCircuiti::$ruolo, EGestoreNoleggio::$ruolo]);
         $user = CAuth::utenteCorrente();
         $uid  = (int) $user['id'];
-        $q    = trim((string) ($_GET['q'] ?? ''));
+        $q    = trim((string) get('q', ''));
 
         // Gli id dei piloti ancora sanzionabili distinguono nel template il
         // pulsante "Sanziona" da "Già sanzionato".
@@ -221,7 +221,7 @@ class CGestionePrenotazioniStorico
             return (int) $id;
         }
 
-        return (int) ($_GET['id'] ?? post('id', '0'));
+        return (int) (get('id') ?? post('id', '0'));
     }
 
     private static function idsPiloti(array $righe): array

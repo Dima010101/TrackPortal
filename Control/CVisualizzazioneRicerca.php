@@ -25,7 +25,7 @@ class CVisualizzazioneRicerca
             redirect('/dashboard');
         }
         /**se digitato qualcosa nella barra di ricerca rimando a cercacircuiti */
-        if (get('q', '') !== '') {
+        if ((string) get('q', '') !== '') {
             $this->cercaCircuiti();
             return;
         }
@@ -47,7 +47,7 @@ class CVisualizzazioneRicerca
     /**elenco dei circuiti completo*/
     public function elencaCircuiti(): void
     {
-        if (get('q', '') !== '') {
+        if ((string) get('q', '') !== '') {
             $this->cercaCircuiti();
             return;
         }
@@ -98,7 +98,7 @@ class CVisualizzazioneRicerca
 
         $calendario = FPersistentManager::sessioneCalendarioSettimanale(
             $idCircuito,
-            (int) ($_GET['settimana'] ?? 0),
+            (int) get('settimana', '0'),
             $pilotaId
         );
         $calendario['cal_readonly']       = true;

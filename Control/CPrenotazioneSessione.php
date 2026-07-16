@@ -36,7 +36,7 @@ class CPrenotazioneSessione
         CAuth::richiediRuolo(EPilota::$ruolo);
         $user   = CAuth::utenteCorrente();
         $pilota = self::pilotaProntoOppureRedirect((int) $user['id']);
-        $id     = (int) ($sessioneId ?: ($_GET['sessione_id'] ?? 0));
+        $id     = (int) ($sessioneId ?: get('sessione_id', '0'));
 
         [$sessione, $circuito, $errors] = self::caricaSessioneCircuito($id, (int) $user['id']);
         $postiOccupati = 0;

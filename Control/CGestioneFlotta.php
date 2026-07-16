@@ -189,7 +189,7 @@ class CGestioneFlotta
             return (int) $valore;
         }
 
-        return (int) ($_GET[$parametroGet] ?? 0);
+        return (int) get($parametroGet, '0');
     }
 
     /** Verifica POST + token CSRF del form veicolo. */

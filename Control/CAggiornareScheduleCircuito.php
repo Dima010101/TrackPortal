@@ -36,8 +36,8 @@ class CAggiornareScheduleCircuito
 
         self::renderCalendario(
             $gestoreId,
-            (int) ($_GET['circuito_id'] ?? 0),
-            (int) ($_GET['settimana'] ?? 0),
+            (int) get('circuito_id', '0'),
+            (int) get('settimana', '0'),
             []
         );
     }
@@ -46,7 +46,7 @@ class CAggiornareScheduleCircuito
     public function selezionaSlot(string $data = '', string $ora = ''): void
     {
         $gestoreId  = self::richiediGestoreCircuiti();
-        $circuitoId = (int) ($_GET['circuito_id'] ?? 0);
+        $circuitoId = (int) get('circuito_id', '0');
 
         [$sessione, $errors, $data, $ora] = self::caricaSlot($circuitoId, $gestoreId, $data, $ora);
 
@@ -56,7 +56,7 @@ class CAggiornareScheduleCircuito
             $ora,
             $sessione,
             $errors,
-            (int) ($_GET['settimana'] ?? 0),
+            (int) get('settimana', '0'),
             [],
             self::prenotazioniIntervallo($sessione),
             self::idsPilotiSanzionabili($gestoreId)
@@ -92,8 +92,8 @@ class CAggiornareScheduleCircuito
     public function annullaSessione(int|string $sessione = 0): void
     {
         $gestoreId  = self::richiediGestoreCircuiti();
-        $sessioneId = (int) ($sessione ?: ($_GET['sessione_id'] ?? 0));
-        $settimana  = (int) ($_GET['settimana'] ?? 0);
+        $sessioneId = (int) ($sessione ?: (get('sessione_id', '0')));
+        $settimana  = (int) get('settimana', '0');
 
         $sessioneRow = self::sessioneAnnullabile($sessioneId, $gestoreId, $settimana);
 

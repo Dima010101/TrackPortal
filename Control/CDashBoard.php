@@ -102,7 +102,7 @@ class CDashboard
     /** Finestra temporale grafici (3 / 6 / 12 mesi) */
     private static function finestraMesi(): int
     {
-        $mesi = (int) ($_GET['mesi'] ?? 6);
+        $mesi = (int) get('mesi', '6');
 
         return in_array($mesi, [3, 6, 12], true) ? $mesi : 6;
     }
@@ -111,7 +111,7 @@ class CDashboard
      */
     private static function circuitoSelezionato(array $circuiti): int
     {
-        $sel = (int) ($_GET['circuito'] ?? 0);
+        $sel = (int) get('circuito', '0');
         $ids = array_map(static fn (array $c): int => (int) $c['id'], $circuiti);
 
         return $sel > 0 && in_array($sel, $ids, true) ? $sel : 0;
