@@ -112,6 +112,19 @@ class FPersistentManager
         return $row;
     }
 
+    /** conteggio totale di record di una entity */
+    public static function countAll(string $entityClass): int
+    {
+        $meta = self::em()->getClassMetadata($entityClass);
+        $id   = $meta->getSingleIdentifierFieldName();
+
+        return (int) self::em()->createQueryBuilder()
+            ->select("COUNT(e.{$id})")
+            ->from($entityClass, 'e')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
 
 
     /**METODI DI REDIRECT ALLE SINGOLE REPOSITORY */
@@ -524,4 +537,115 @@ class FPersistentManager
     {
         return \FConfigurazionePiattaforma::storicoUltimi($limit);
     }
+
+    public static function prenotazioneLoadProssimeByPilota(int $pilotaId, int $limit = 5): array
+    {
+        return \FPrenotazione::loadProssimeByPilota($pilotaId, $limit);
+    }
+
+    public static function circuitoLoadPopolariMensile(int $limit = 4): array
+    {
+        return \FCircuito::loadPopolariMensile($limit);
+    }
+
+    public static function sessioneCountConcluseMeseByGestore(int $gestoreId): int
+    {
+        return \FSessione::countConcluseMeseByGestore($gestoreId);
+    }
+
+    public static function prenotazioneCountFutureByGestore(int $gestoreId): int
+    {
+        return \FPrenotazione::countFutureByGestore($gestoreId);
+    }
+
+    public static function promozioneCountAttiveByCreator(int $accountId): int
+    {
+        return \FPromozione::countAttiveByCreator($accountId);
+    }
+
+    public static function prenotazioneSumGuadagnoMeseGestore(int $gestoreId): float
+    {
+        return \FPrenotazione::sumGuadagnoMeseGestore($gestoreId);
+    }
+
+    public static function prenotazioneAndamentoMensileGestore(int $gestoreId, int $mesi = 6, ?int $circuitoId = NULL): array
+    {
+        return \FPrenotazione::andamentoMensileGestore($gestoreId, $mesi, $circuitoId);
+    }
+
+    public static function veicoloNoleggioCountByAzienda(int $aziendaId): int
+    {
+        return \FVeicoloNoleggio::countByAzienda($aziendaId);
+    }
+
+    public static function veicoloNoleggioCountDisponibiliByAzienda(int $aziendaId): int
+    {
+        return \FVeicoloNoleggio::countDisponibiliByAzienda($aziendaId);
+    }
+
+    public static function prenotazioneCountByAziendaAttive(int $aziendaId): int
+    {
+        return \FPrenotazione::countByAziendaAttive($aziendaId);
+    }
+
+    public static function prenotazioneSumGuadagnoAzienda(int $aziendaId): float
+    {
+        return \FPrenotazione::sumGuadagnoAzienda($aziendaId);
+    }
+
+    public static function veicoloNoleggioLoadTopByAzienda(int $aziendaId, int $limit = 5): array
+    {
+        return \FVeicoloNoleggio::loadTopByAzienda($aziendaId, $limit);
+    }
+
+    public static function prenotazioneLoadProssimiNoleggiByAzienda(int $aziendaId, int $limit = 6): array
+    {
+        return \FPrenotazione::loadProssimiNoleggiByAzienda($aziendaId, $limit);
+    }
+
+    public static function prenotazioneAndamentoMensileAzienda(int $aziendaId, int $mesi = 6): array
+    {
+        return \FPrenotazione::andamentoMensileAzienda($aziendaId, $mesi);
+    }
+
+    public static function gestoreCircuitiCountPending(): int
+    {
+        return \FGestoreCircuiti::countPending();
+    }
+
+    public static function gestoreNoleggioCountPending(): int
+    {
+        return \FGestoreNoleggio::countPending();
+    }
+
+    public static function pilotaCountPending(): int
+    {
+        return \FPilota::countPending();
+    }
+
+    public static function prenotazioneSumRicaviConfermate(): float
+    {
+        return \FPrenotazione::sumRicaviConfermate();
+    }
+
+    public static function accountCountAll(): int
+    {
+        return \FAccount::countAll();
+    }
+
+    public static function prenotazioneCountAll(): int
+    {
+        return \FPrenotazione::countAll();
+    }
+
+    public static function prenotazioneLoadUltimePerFatturazione(int $limit = 20): array
+    {
+        return \FPrenotazione::loadUltimePerFatturazione($limit);
+    }
+
+    public static function prenotazioneAndamentoMensileAssicurazioni(int $mesi = 6): array
+    {
+        return \FPrenotazione::andamentoMensileAssicurazioni($mesi);
+    }
+
 }
