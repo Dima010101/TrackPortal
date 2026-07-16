@@ -330,3 +330,4 @@ class CGestioneAggiuntaPromozioni
             $errors
         );
     }
+}

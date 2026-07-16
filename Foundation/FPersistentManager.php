@@ -35,4 +35,44 @@ class FPersistentManager
     {
         return \FCircuito::loadById($id);
     }
+
+    public static function gestoreCircuitiIsAffiliazioneApprovata(int $uid): bool
+    {
+        return \FGestoreCircuiti::isAffiliazioneApprovata($uid);
+    }
+
+    public static function promozioneDeleteOwned(\EPromozione $p): void
+    {
+        \FPromozione::deleteOwned($p);
+    }
+
+    public static function promozioneLoadByCreatore(int $accountId): array
+    {
+        return \FPromozione::loadByCreatorAccount($accountId);
+    }
+
+    public static function veicoloNoleggioLoadByAzienda(int $aziendaId, ?string $categoria = NULL): array
+    {
+        return \FVeicoloNoleggio::loadByAzienda($aziendaId, $categoria);
+    }
+
+    public static function circuitoLoadByGestore(int $gestoreId): array
+    {
+        return \FCircuito::loadByGestore($gestoreId);
+    }
+
+    public static function veicoloNoleggioLoadByIdAndAzienda(int $id, int $aziendaId): ?array
+    {
+        return \FVeicoloNoleggio::loadByIdAndAzienda($id, $aziendaId);
+    }
+
+    public static function promozioneLoadByVeicolo(int $veicoloId): array
+    {
+        return \FPromozione::loadByVeicolo($veicoloId);
+    }
+
+    public static function promozioneLoadByCircuitoConDettagli(int $circuitoId): array
+    {
+        return \FPromozione::loadByCircuitoConDettagli($circuitoId);
+    }
 }
