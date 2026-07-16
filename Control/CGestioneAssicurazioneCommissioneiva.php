@@ -202,3 +202,147 @@ class CGestioneAssicurazioneCommissioneIva
 
         self::mostraRiepilogo($attuali, $nuovi);
     }
+
+    /**
+     * Mostra la schermata di riepilogo con i valori attuali e quelli proposti.
+     * Salva i valori proposti in sessione per il passo successivo di conferma.
+     */
+    private static function mostraRiepilogo(array $attuali, array $nuovi): void
+    {
+        $_SESSION[self::SESSION_KEY] = [
+            'prezzo_assicurazione'    => $nuovi[0],
+            'percentuale_commissione' => $nuovi[1],
+            'aliquota_iva'            => $nuovi[2],
+            'prezzo_precedente'       => $attuali[0],
+            'percentuale_precedente'  => $attuali[1],
+            'aliquota_precedente'     => $attuali[2],
+        ];
+
+        $totAssic = FPersistentManager::prenotazioneCountConAssicurazione();
+        VAmministratore::commissioniRiepilogo(
+            $attuali[0], $attuali[1], $nuovi[0], $nuovi[1],
+            (float) $totAssic * $attuali[0], (float) $totAssic * $nuovi[0],
+            $attuali[2], $nuovi[2]
+        );
+    }
+
+    private static function pendingValido(mixed $pending): bool
+    {
+        return is_array($pending)
+            && isset($pending['prezzo_assicurazione'], $pending['percentuale_commissione'], $pending['aliquota_iva']);
+    }
+
+    /**
+     * Salva i valori in sospeso in piattaforma e mostra la schermata di conferma.
+     * In caso di errore, mostra la schermata di conferma con l'errore.
+     */
+    private static function salvaPending(array $pending): void
+    {
+        try {
+            $salvato = FPersistentManager::configurazionePiattaformaImpostaEconomici(
+                (float) $pending['prezzo_assicurazione'],
+                (float) $pending['percentuale_commissione'],
+                (float) $pending['aliquota_iva']
+            );
+            unset($_SESSION[self::SESSION_KEY]);
+
+            $salvato
+                ? VAmministratore::commissioniConferma(true, [], (float) $pending['prezzo_assicurazione'], (float) $pending['percentuale_commissione'], (float) $pending['aliquota_iva'])
+                : VAmministratore::commissioniConferma(false, ['Le modifiche non sono state applicate: i valori risultano già aggiornati.']);
+        } catch (InvalidArgumentException $e) {
+            VAmministratore::commissioniConferma(false, [$e->getMessage()]);
+        } catch (Throwable) {
+            VAmministratore::commissioniConferma(false, ['Errore durante il salvataggio dei parametri. Riprova tra qualche istante.']);
+        }
+    }
+
+    /**
+     * Renderizza la dashboard con i valori attuali o proposti, eventuali errori
+     * e valori del form.
+     */
+    private static function renderDashboard(
+        float $prezzo,
+        float $perc,
+        float $aliquota,
+        bool $anteprima,
+        array $errors,
+        array $formValori = []
+    ): void {
+        $totAssic    = FPersistentManager::prenotazioneCountConAssicurazione();
+        $ricavoAssic = (float) $totAssic * $prezzo;
+        $grafici     = [
+            'tot_assicurazioni' => $totAssic,
+            'ricavo_assic'      => $ricavoAssic,
+            'commissione_pct'   => round($perc, 2),
+        ];
+
+        VAmministratore::commissioni(
+            $prezzo,
+            $perc,
+            $aliquota,
+            $ricavoAssic,
+            FPersistentManager::configurazionePiattaformaStoricoUltimi(10),
+            $grafici,
+            $anteprima,
+            $errors,
+            $formValori
+        );
+    }
+
+    private static function leggiPrezzoInput(float|int|string|null $nuovoPrezzo): string
+    {
+        if ($nuovoPrezzo !== null && $nuovoPrezzo !== '') {
+            return (string) $nuovoPrezzo;
+        }
+
+        return (string) post('prezzo_assicurazione', '');
+    }
+
+    /**
+     * Restituisce i dati inviati tramite POST come array associativo.
+     */
+    private static function datiDaPost(): array
+    {
+        return [
+            'csrf_token'              => post('csrf_token'),
+            'prezzo_assicurazione'    => post('prezzo_assicurazione'),
+            'percentuale_commissione' => post('percentuale_commissione'),
+            'aliquota_iva'            => post('aliquota_iva'),
+        ];
+    }
+
+    /**
+     * Restituisce i valori del form come array associativo, con valori di default
+     * se non presenti nei dati POST.
+     */
+    private static function valoriFormDaPost(): array
+    {
+        return self::valoriFormDaArray(self::datiDaPost());
+    }
+
+    /**
+     * Restituisce i valori del form come array associativo, con valori di default
+     * se non presenti nei dati forniti.
+     */
+    private static function valoriFormDaArray(array $dati): array
+    {
+        return [
+            'prezzo_assicurazione'    => (string) ($dati['prezzo_assicurazione'] ?? ''),
+            'percentuale_commissione' => (string) ($dati['percentuale_commissione'] ?? ''),
+            'aliquota_iva'            => (string) ($dati['aliquota_iva'] ?? ''),
+        ];
+    }
+
+    /**
+     * Restituisce i valori del form come array associativo a partire da un array
+     * di valori numerici.
+     */
+    private static function formDaValori(array $valori): array
+    {
+        return [
+            'prezzo_assicurazione'    => $valori[0],
+            'percentuale_commissione' => $valori[1],
+            'aliquota_iva'            => $valori[2],
+        ];
+    }
+}
