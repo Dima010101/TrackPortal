@@ -330,4 +330,128 @@ class CGestioneAggiuntaPromozioni
             $errors
         );
     }
-}
+
+    /*
+    * Mostra la schermata con il modulo per la modifica di una promozione esistente,
+    * passando alla vista i dati precompilati ed eventuali errori di validazione.
+    */
+    private static function mostraFormModifica(EPromozione $promo, array $entita, int $entitaId, string $ruolo, array $form, array $errors): void
+    {
+        VPromozioni::formModificaPromozione(
+            (int) $promo->getId(),
+            $entita,
+            $entitaId,
+            self::tipoEntitaPerRuolo($ruolo),
+            $ruolo,
+            self::DASH_BACK,
+            $form,
+            $errors
+        );
+    }
+
+    /*
+    * Salva la nuova promozione nel database, invia le notifiche ai piloti idonei
+    * e mostra la schermata di conferma con l'elenco aggiornato.
+    */
+    private static function salvaENotifica(int $accountId, string $ruolo, int $entitaId, array $entita, array $dati): void
+    {
+        $promoRow = FPersistentManager::entityToRow(self::persistiPromozione($accountId, $ruolo, $entitaId, $dati));
+
+        try {
+            FPersistentManager::notifichePromozionePiloti($promoRow);
+        } catch (Throwable $e) {
+            error_log('Notifica promozione piloti: ' . $e->getMessage());
+        }
+
+        VPromozioni::confermaPromozione(
+            $promoRow,
+            $entita,
+            $entitaId,
+            self::caricaPromozioniPerEntita($entitaId, $ruolo),
+            self::tipoEntitaPerRuolo($ruolo),
+            $ruolo,
+            self::DASH_BACK
+        );
+    }
+
+    /*
+    * Verifica la validità della richiesta di modifica (metodo HTTP e token CSRF)
+    * e valida i dati inseriti per la promozione.
+    *
+    * Ritorna un elenco degli errori riscontrati, oppure un array vuoto se tutto è corretto.
+    */
+    private static function erroriRichiestaModifica(array $dati): array
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return ['Richiesta non valida: invia il form per salvare le modifiche.'];
+        }
+        if (!csrf_check(isset($dati['csrf_token']) ? (string) $dati['csrf_token'] : null)) {
+            return ['Token CSRF non valido.'];
+        }
+
+        return self::validaDatiPromozione($dati);
+    }
+
+    /*
+    * Verifica la validità della richiesta di eliminazione (metodo HTTP e token CSRF)
+    * e si assicura che la promozione da eliminare sia valida e accessibile.
+    *
+    * Ritorna un elenco degli errori riscontrati, oppure un array vuoto se l'operazione può procedere.
+    */
+    private static function erroriEliminazione(?EPromozione $promo): array
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return ['Richiesta non valida: usa il pulsante di eliminazione.'];
+        }
+        if (!csrf_check(post('csrf_token'))) {
+            return ['Token CSRF non valido.'];
+        }
+        if ($promo === null) {
+            return ['Promozione non trovata o non autorizzata.'];
+        }
+
+        return [];
+    }
+
+    /*
+    * Applica al modello i nuovi dettagli della promozione e salva le modifiche nel database.
+    * L'entità (circuito o veicolo) associata originariamente alla promozione rimane invariata.
+    */   
+    private static function applicaModifichePromozione(EPromozione $promo, array $dati, int $entitaId, string $ruolo): void
+    {
+        $soglia = trim((string) ($dati['soglia_prenotazioni'] ?? ''));
+        $descr  = trim((string) ($dati['descrizione'] ?? ''));
+
+        $promo->updateDetails(
+            trim((string) $dati['titolo']),
+            $descr !== '' ? $descr : null,
+            (string) $dati['tipo_sconto'],
+            (float) $dati['valore'],
+            trim((string) ($dati['data_inizio'] ?? '')) ?: null,
+            trim((string) ($dati['data_fine'] ?? '')) ?: null,
+            $soglia !== '' ? (int) $soglia : null,
+            $ruolo === EGestoreNoleggio::$ruolo ? $entitaId : null,
+            $ruolo === EGestoreCircuiti::$ruolo ? $entitaId : null
+        );
+        FPersistentManager::promozioneStore($promo);
+    }
+
+    /*
+    * Converte l'oggetto promozione in un array di dati formattati per la visualizzazione 
+    * all'interno dei campi del modulo HTML.
+    */
+    private static function promoToForm(EPromozione $promo): array
+    {
+        $soglia = $promo->getSogliaPrenotazioni();
+
+        return [
+            'titolo'              => $promo->getTitolo(),
+            'descrizione'         => (string) ($promo->getDescrizione() ?? ''),
+            'tipo_sconto'         => $promo->getTipoSconto(),
+            // Mostra "15" anziché "15.00"; mantiene i decimali se presenti.
+            'valore'              => rtrim(rtrim(number_format($promo->getValore(), 2, '.', ''), '0'), '.'),
+            'data_inizio'         => (string) ($promo->getDataInizio() ?? ''),
+            'data_fine'           => (string) ($promo->getDataFine() ?? ''),
+            'soglia_prenotazioni' => $soglia !== null ? (string) $soglia : '',
+        ];
+    }
