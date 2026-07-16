@@ -144,3 +144,94 @@ function csrf_check(?string $token): bool
     return !empty($token) && !empty($_SESSION['_csrf'])
         && hash_equals($_SESSION['_csrf'], $token);
 }
+
+/**verifica che il nome del titolare della carta di credito sia valido*/
+function cc_titolare_valido(string $valore): bool
+{
+    $v = trim($valore);
+    $len = mb_strlen($v);
+
+    return $len >= 2 && $len <= 80
+        && preg_match("/^[\p{L}][\p{L}\p{M}'’.\- ]*$/u", $v) === 1;
+}
+
+/**Serializzazione JSON con gestione errori; imposta Content-Type (endpoint API).*/
+function json_print(mixed $value, int $httpStatus = 200, int $extraFlags = 0): void
+{
+    if ($httpStatus !== 200) {
+        http_response_code($httpStatus);
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    try {
+        echo json_encode($value, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR | $extraFlags);
+    } catch (JsonException) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8', true);
+        echo '{"error":"Impossibile serializzare la risposta JSON"}';
+    }
+}
+
+/** verifica che numero carta è valido: 13–19 cifre e checksum di Luhn corretta. */
+function cc_numero_valido(string $numero): bool
+{
+    $cifre = cc_solo_cifre($numero);
+    $len = strlen($cifre);
+
+    return $len >= 13 && $len <= 19 && cc_luhn_valido($cifre);
+}
+
+/** Estrae le sole cifre da un numero carta (rimuove spazi e separatori) */
+function cc_solo_cifre(string $valore): string
+{
+    return preg_replace('/\D/', '', $valore) ?? '';
+}
+
+/** Algoritmo di Luhn (checksum standard delle carte di pagamento)*/
+function cc_luhn_valido(string $cifre): bool
+{
+    if ($cifre === '' || !ctype_digit($cifre)) {
+        return false;
+    }
+    $somma = 0;
+    $alt = false;
+    for ($i = strlen($cifre) - 1; $i >= 0; $i--) {
+        $d = (int) $cifre[$i];
+        if ($alt) {
+            $d *= 2;
+            if ($d > 9) {
+                $d -= 9;
+            }
+        }
+        $somma += $d;
+        $alt = !$alt;
+    }
+
+    return $somma % 10 === 0;
+}
+
+/**
+ * Scadenza nel formato MM/YYYY con mese valido e carta non scaduta (entro ~20 anni dalla data odierna)*/
+function cc_scadenza_valida(string $scad): bool
+{
+    if (preg_match('#^(\d{2})/(\d{4})$#', trim($scad), $m) !== 1) {
+        return false;
+    }
+    $mese = (int) $m[1];
+    $anno = (int) $m[2];
+    if ($mese < 1 || $mese > 12) {
+        return false;
+    }
+    $annoCorr = (int) date('Y');
+    $meseCorr = (int) date('n');
+    if ($anno < $annoCorr || ($anno === $annoCorr && $mese < $meseCorr)) {
+        return false;
+    }
+
+    return $anno <= $annoCorr + 20;
+}
+
+/** CVV: 3 o 4 cifre */
+function cc_cvv_valido(string $cvv): bool
+{
+    return preg_match('/^\d{3,4}$/', trim($cvv)) === 1;
+}
