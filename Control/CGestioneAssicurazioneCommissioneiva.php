@@ -59,3 +59,146 @@ class CGestioneAssicurazioneCommissioneIva
 
         self::renderDashboard($proposti[0], $proposti[1], $proposti[2], true, [], self::formDaValori($proposti));
     }
+
+    /**
+     * POST — visualizza il riepilogo della modifica e richiede conferma prima del salvataggio definitivo.
+     */
+    public function riepilogaModifica(array $datiModifica = []): void
+    {
+        self::richiediAdmin();
+
+        $datiModifica = $datiModifica !== [] ? $datiModifica : self::datiDaPost();
+        $attuali      = self::valoriAttuali();
+        $nuovi        = $attuali;
+
+        $errors = self::erroriRichiestaPost(
+            'invia il form per procedere al salvataggio',
+            isset($datiModifica['csrf_token']) ? (string) $datiModifica['csrf_token'] : null
+        );
+        if ($errors === []) {
+            try {
+                $nuovi = self::parseProposti(
+                    (string) ($datiModifica['prezzo_assicurazione'] ?? ''),
+                    (string) ($datiModifica['percentuale_commissione'] ?? ''),
+                    (string) ($datiModifica['aliquota_iva'] ?? '')
+                );
+            } catch (InvalidArgumentException $e) {
+                $errors[] = $e->getMessage();
+            }
+        }
+
+        self::concludiRiepilogo($attuali, $nuovi, $errors, $datiModifica);
+    }
+
+    /**
+     * POST — conferma le modifiche e salva i nuovi valori in piattaforma.
+     */
+    public function confermaModifica(): void
+    {
+        self::richiediAdmin();
+
+        $errors  = self::erroriRichiestaPost('conferma le modifiche dal riepilogo');
+        $pending = $_SESSION[self::SESSION_KEY] ?? null;
+        if ($errors === [] && !self::pendingValido($pending)) {
+            $errors[] = 'Nessuna modifica in sospeso da confermare. Ripeti la procedura di aggiornamento.';
+        }
+
+        if ($errors !== []) {
+            VAmministratore::commissioniConferma(false, $errors);
+            return;
+        }
+
+        self::salvaPending($pending);
+    }
+
+    private static function richiediAdmin(): void
+    {
+        CAuth::richiediRuolo(EAmministratore::$ruolo);
+    }
+
+    /**
+     * Restituisce i valori attuali della piattaforma (prezzo assicurazione,
+     * percentuale commissione, aliquota IVA).
+     */
+    private static function valoriAttuali(): array
+    {
+        return [
+            FPersistentManager::configurazionePiattaformaPrezzoAssicurazione(),
+            FPersistentManager::configurazionePiattaformaPercentualeCommissione(),
+            FPersistentManager::configurazionePiattaformaAliquotaIva(),
+        ];
+    }
+
+    /**
+     * Controlla che la richiesta sia POST e che il token CSRF sia valido.
+     */
+    private static function erroriRichiestaPost(string $istruzione, ?string $token = null): array
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return ['Richiesta non valida: ' . $istruzione . '.'];
+        }
+        if (!csrf_check($token ?? post('csrf_token'))) {
+            return ['Token CSRF non valido. Ricarica la pagina e riprova.'];
+        }
+
+        return [];
+    }
+
+    /** Parsing dei tre valori proposti (prezzo, percentuale, aliquota). */
+    private static function parseProposti(string $prezzo, string $percentuale, string $aliquota): array
+    {
+        return [
+            self::parseValore(
+                $prezzo,
+                'Il prezzo assicurazione non è valido: inserisci un importo numerico (es. 12,50).',
+                'Il prezzo assicurazione deve essere maggiore o uguale a zero.',
+                null
+            ),
+            self::parseValore(
+                $percentuale,
+                'La percentuale commissione non è valida: inserisci un valore numerico (es. 5,00).',
+                'La percentuale commissione deve essere compresa tra 0 e 100.',
+                100.0
+            ),
+            self::parseValore(
+                $aliquota,
+                'L\'aliquota IVA non è valida: inserisci un valore numerico (es. 22,00).',
+                'L\'aliquota IVA deve essere compresa tra 0 e 100.',
+                100.0
+            ),
+        ];
+    }
+
+    /** Parsing comune dei tre valori economici (virgola ammessa, range 0..$max). */
+    private static function parseValore(string $raw, string $msgNonValido, string $msgIntervallo, ?float $max): float
+    {
+        $normalizzato = trim(str_replace(',', '.', $raw));
+        if ($normalizzato === '' || !is_numeric($normalizzato)) {
+            throw new InvalidArgumentException($msgNonValido);
+        }
+
+        $valore = (float) $normalizzato;
+        if ($valore < 0 || ($max !== null && $valore > $max)) {
+            throw new InvalidArgumentException($msgIntervallo);
+        }
+
+        return round($valore, 2);
+    }
+
+    /**
+     * Chiude il passo di riepilogo: errori → dashboard; nessuna modifica →
+     * avviso; altrimenti valori in sessione + schermata di riepilogo.
+     */
+    private static function concludiRiepilogo(array $attuali, array $nuovi, array $errors, array $datiModifica): void
+    {
+        if ($errors !== []) {
+            self::renderDashboard($attuali[0], $attuali[1], $attuali[2], true, $errors, self::valoriFormDaArray($datiModifica));
+            return;
+        }
+        if ($attuali === $nuovi) {
+            self::renderDashboard($attuali[0], $attuali[1], $attuali[2], false, ['Nessuna modifica rispetto ai valori attuali.']);
+            return;
+        }
+
+        self::mostraRiepilogo($attuali, $nuovi);
+    }
