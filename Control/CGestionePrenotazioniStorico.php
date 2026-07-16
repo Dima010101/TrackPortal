@@ -398,8 +398,6 @@ class CGestionePrenotazioniStorico
     /**
      * Prenotazione e vista fattura in base al ruolo; l'autorizzazione è
      * implicita nella query.
-     *
-     * @return array{pren: array<string, mixed>, vista: string}|null
      */
     private static function caricaPerRuolo(string $ruolo, int $uid, int $id): ?array
     {
