@@ -139,3 +139,102 @@ class FFatturazione
             }
         });
     }
+
+     /**
+     * Emette le note di credito per una prenotazione, in caso di rimborso.
+     */
+    public static function emettiNoteCreditoPerPrenotazione(
+        int $prenId,
+        float $rimborso,
+        float $totalePagato,
+        ?string $causa
+    ): void {
+        $fatture = FDocumentoFiscale::loadFatturePerPrenotazione($prenId);
+        if ($fatture === []) {
+            return;
+        }
+
+        $frazione = $totalePagato > 0 ? max(0.0, min(1.0, $rimborso / $totalePagato)) : 1.0;
+        if ($frazione <= 0) {
+            return;
+        }
+
+        $causaleBase = 'Storno per annullamento prenotazione' . ($causa ? ' — ' . $causa : '');
+
+        FPersistentManager::transaction(static function () use ($fatture, $frazione, $causaleBase, $prenId): void {
+            foreach ($fatture as $f) {
+                if (FDocumentoFiscale::notaCreditoEsiste((int) $f['id'])) {
+                    continue;
+                }
+
+                $righe = [];
+                foreach (FDocumentoFiscale::loadRighe((int) $f['id']) as $r) {
+                    $imp     = round((float) $r['imponibile'] * $frazione, 2);
+                    $aliq    = (float) $r['aliquota_iva'];
+                    $imposta = round($imp * $aliq / 100, 2);
+                    $righe[] = [
+                        'descrizione'     => 'Storno: ' . $r['descrizione'],
+                        'quantita'        => 1,
+                        'prezzo_unitario' => $imp,
+                        'imponibile'      => $imp,
+                        'aliquota_iva'    => $aliq,
+                        'natura_iva'      => $r['natura_iva'] ?: null,
+                        'imposta'         => $imposta,
+                    ];
+                }
+
+                self::creaDocumento([
+                    'tipo'                     => FDocumentoFiscale::TIPO_NOTA_CREDITO,
+                    'emittente_tipo'           => (string) $f['emittente_tipo'],
+                    'emittente_id'             => (int) $f['emittente_id'],
+                    'emittente_denominazione'  => (string) $f['emittente_denominazione'],
+                    'emittente_piva'           => (string) $f['emittente_piva'],
+                    'emittente_cf'             => $f['emittente_cf'] ?: null,
+                    'emittente_indirizzo'      => (string) $f['emittente_indirizzo'],
+                    'cliente_tipo'             => (string) $f['cliente_tipo'],
+                    'cliente_id'               => (int) $f['cliente_id'],
+                    'cliente_denominazione'    => (string) $f['cliente_denominazione'],
+                    'cliente_piva'             => $f['cliente_piva'] ?: null,
+                    'cliente_cf'               => $f['cliente_cf'] ?: null,
+                    'cliente_indirizzo'        => (string) $f['cliente_indirizzo'],
+                    'prenotazione_id'          => $prenId,
+                    'documento_riferimento_id' => (int) $f['id'],
+                    'valuta'                   => (string) $f['valuta'],
+                    'causale'                  => $causaleBase . ' (rif. ' . $f['numero_formattato'] . ')',
+                    'righe'                    => $righe,
+                ]);
+            }
+        });
+    }
+
+    /**
+     * Crea una riga di fattura o nota di credito.
+    */
+    private static function riga(
+        string $descrizione,
+        float $imponibile,
+        float $aliquotaStd,
+        ?string $naturaSpeciale
+    ): array {
+        $imponibile = round($imponibile, 2);
+
+        if ($naturaSpeciale !== null) {
+            $aliquota = 0.0;
+            $natura   = $naturaSpeciale;
+            $imposta  = 0.0;
+        } else {
+            $aliquota = $aliquotaStd;
+            $natura   = null;
+            $imposta  = round($imponibile * $aliquota / 100, 2);
+        }
+
+        return [
+            'descrizione'     => $descrizione,
+            'quantita'        => 1,
+            'prezzo_unitario' => $imponibile,
+            'imponibile'      => $imponibile,
+            'aliquota_iva'    => $aliquota,
+            'natura_iva'      => $natura,
+            'imposta'         => $imposta,
+        ];
+    }
