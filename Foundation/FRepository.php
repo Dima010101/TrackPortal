@@ -5,7 +5,6 @@
  */
 abstract class FRepository
 {
-    /** @return class-string */
     abstract protected static function entityClass(): string;
 
     public static function countAll(): int

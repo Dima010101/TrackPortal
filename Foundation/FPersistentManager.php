@@ -128,6 +128,22 @@ class FPersistentManager
             ->getSingleScalarResult();
     }
 
+    /**effettua conteggio in base a una condizione */
+    public static function countWhere(string $entityClass, string $dqlWhere, array $parameters = []): int
+    {
+        $meta = self::em()->getClassMetadata($entityClass);
+        $id   = $meta->getSingleIdentifierFieldName();
+        $qb   = self::em()->createQueryBuilder()
+            ->select("COUNT(e.{$id})")
+            ->from($entityClass, 'e')
+            ->where($dqlWhere);
+
+        foreach ($parameters as $key => $value) {
+            $qb->setParameter($key, $value);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
 
 
     /**METODI DI REDIRECT ALLE SINGOLE REPOSITORY */
