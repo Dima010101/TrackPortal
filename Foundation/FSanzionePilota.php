@@ -301,3 +301,106 @@ class FSanzionePilota extends FRepository
 
         return $n;
     }
+
+    /**
+     * Emette le note di credito per le prenotazioni stornate, con rimborso del 100%.
+     * L'operazione è best-effort, fuori transazione.
+     */
+    private static function emettiNoteCredito(array $stornate, string $causaPren): void
+    {
+        foreach ($stornate as $s) {
+            try {
+                FFatturazione::emettiNoteCreditoPerPrenotazione(
+                    $s['id'],
+                    $s['importo'],
+                    $s['importo'],
+                    $causaPren
+                );
+            } catch (Throwable $e) {
+                error_log('Emissione note di credito (sanzione pilota) fallita: ' . $e->getMessage());
+            }
+        }
+    }
+
+    /** Testo della causa di annullamento per ban (permanente) o sospensione (con scadenza). */
+    protected static function causaStorno(string $tipo, ?string $dataFineNorm): string
+    {
+        return $tipo === ESanzionePilota::TIPO_BAN
+            ? 'Prenotazione annullata: ban del pilota dal gestore del circuito.'
+            : 'Prenotazione annullata: sospensione del pilota dal gestore del circuito fino al '
+                . self::dataItaliana((string) $dataFineNorm) . '.';
+    }
+
+    /**
+     * Restituisce le prenotazioni future del pilota sul gestore, fino alla data indicata (o tutte se null),
+     * da annullare con rimborso del 100%.
+     */
+    protected static function prenotazioniFutureDaStornare(int $gestoreId, int $pilotaId, ?string $finoA): array
+    {
+        $sql = "SELECT p.id, p.prezzo_importo
+                FROM prenotazione p
+                JOIN circuito c ON c.id = p.circuito_id
+                WHERE c.gestore_id = :g
+                  AND p.pilota_id = :p
+                  AND p.stato = 'confermata'
+                  AND p.fine_sessione >= NOW()";
+        $args = [':g' => $gestoreId, ':p' => $pilotaId];
+
+        if ($finoA !== null) {
+            $sql .= ' AND p.inizio_sessione <= :finoA';
+            $args[':finoA'] = $finoA;
+        }
+
+        $sql .= ' ORDER BY p.inizio_sessione ASC';
+
+        return FDataBase::executeQuery($sql, $args)->fetchAllAssociative();
+    }
+
+    /** Valida la data di fine sospensione  */
+    private static function validaDataFine(?string $dataFine): string
+    {
+        $val = trim((string) $dataFine);
+        if ($val === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $val)) {
+            throw new InvalidArgumentException('Indica una data di fine sospensione valida (AAAA-MM-GG).');
+        }
+        try {
+            $d = new DateTimeImmutable($val);
+        } catch (Exception) {
+            throw new InvalidArgumentException('Data di fine sospensione non valida.');
+        }
+        if ($d < new DateTimeImmutable('today')) {
+            throw new InvalidArgumentException('La fine della sospensione non può essere nel passato.');
+        }
+
+        return $d->format('Y-m-d');
+    }
+
+    /**
+     * Restituisce lo stato effettivo della sanzione, calcolato in base al tipo, alla data di fine e alla data odierna.
+     */
+    private static function statoEffettivo(array $r, string $oggi): string
+    {
+        if (($r['stato'] ?? '') === ESanzionePilota::STATO_REVOCATA) {
+            return 'revocata';
+        }
+        if (($r['tipo'] ?? '') === ESanzionePilota::TIPO_SOSPENSIONE
+            && !empty($r['data_fine'])
+            && (string) $r['data_fine'] < $oggi) {
+            return 'scaduta';
+        }
+
+        return 'attiva';
+    }
+
+    protected static function dataItaliana(string $sql): string
+    {
+        if ($sql === '') {
+            return '';
+        }
+        try {
+            return (new DateTimeImmutable($sql))->format('d/m/Y');
+        } catch (Exception) {
+            return $sql;
+        }
+    }
+}
