@@ -127,3 +127,177 @@ class FSanzionePilota extends FRepository
 
         return self::loadAttivaByGestorePilota($gestoreId, $pilotaId) === null;
     }
+
+    /**
+     * Applica una nuova sanzione del gestore verso il pilota, annullando con rimborso del 100% le prenotazioni future 
+     * coperte dalla finestra della sanzione (per il ban tutte; per la sospensione quelle entro la data di fine). 
+     * Le prenotazioni già annullate non vengono ripristinate.
+     */
+    public static function applica(
+        int $gestoreId,
+        int $pilotaId,
+        string $tipo,
+        ?string $dataFine,
+        ?string $motivo
+    ): int {
+        if (!in_array($tipo, ESanzionePilota::TIPI, true)) {
+            throw new InvalidArgumentException('Tipo di sanzione non valido.');
+        }
+        $motivoNorm = trim((string) $motivo);
+        if ($motivoNorm === '') {
+            throw new InvalidArgumentException('Indica la motivazione del provvedimento.');
+        }
+        if (mb_strlen($motivoNorm) > 255) {
+            throw new InvalidArgumentException('La motivazione non può superare 255 caratteri.');
+        }
+
+        $dataFineNorm = null;
+        $finoA        = null; // limite superiore per lo storno (solo sospensione)
+        if ($tipo === ESanzionePilota::TIPO_SOSPENSIONE) {
+            $dataFineNorm = self::validaDataFine($dataFine);
+            $finoA        = $dataFineNorm . ' 23:59:59';
+        }
+
+        //Risoluzione dinamica della classe (es. circuito/noleggio).
+        // Usiamo $repo per assicurarci che i metodi ridefiniti siano chiamati correttamente 
+        // anche all'interno della closure statica della transazione.
+        $repo          = static::class;
+        $causaPren     = $repo::causaStorno($tipo, $dataFineNorm);
+        $emittenteTipo = $repo::emittenteTipo();
+
+        // Evitiamo duplicati prima di avviare la transazione.
+        // Se l'eccezione scattasse dentro la transazione, l'EntityManager si bloccherebbe.
+        // Intercettando qui il caso "già sanzionato" (che è un flusso previsto), 
+        // l'EM rimane attivo e possiamo mostrare gli errori nel form.
+        if ($repo::loadAttivaByGestorePilota($gestoreId, $pilotaId) !== null) {
+            throw new InvalidArgumentException('Esiste già una sanzione attiva per questo pilota.');
+        }
+
+        $stornate = [];
+
+        $count = FPersistentManager::transaction(static function () use (
+            $repo, $gestoreId, $pilotaId, $tipo, $dataFineNorm, $motivoNorm, $finoA, $causaPren, $emittenteTipo, &$stornate
+        ): int {
+            $sanzione = new ESanzionePilota(
+                $gestoreId,
+                $pilotaId,
+                $tipo,
+                $dataFineNorm,
+                $motivoNorm,
+                emittenteTipo: $emittenteTipo
+            );
+            FPersistentManager::persist($sanzione, false);
+
+            $n = $repo::stornaPrenotazioniFuture($gestoreId, $pilotaId, $finoA, $causaPren, $stornate);
+
+            FPersistentManager::flush();
+
+            return $n;
+        });
+
+        // Storno fiscale al 100% dopo il commit (best-effort, fuori transazione),
+        // coerente con l'annullamento sessione del gestore.
+        self::emettiNoteCredito($stornate, $causaPren);
+
+        return $count;
+    }
+
+    /**
+     * Modifica il tipo e/o la data di fine di una sanzione attiva del gestore verso il pilota,
+     *  annullando con rimborso del 100% le prenotazioni future coperte dalla nuova finestra della sanzione 
+     * (per il ban tutte; per la sospensione quelle entro la data di fine). 
+     * Le prenotazioni già annullate non vengono ripristinate.
+     */
+    public static function modificaPeriodo(
+        int $sanzioneId,
+        int $gestoreId,
+        string $tipo,
+        ?string $dataFine
+    ): int {
+        if (!in_array($tipo, ESanzionePilota::TIPI, true)) {
+            throw new InvalidArgumentException('Tipo di sanzione non valido.');
+        }
+
+        $repo     = static::class;
+        $sanzione = FPersistentManager::find(ESanzionePilota::class, $sanzioneId);
+        if (!$sanzione instanceof ESanzionePilota
+            || $sanzione->getGestoreId() !== $gestoreId
+            || $sanzione->getEmittenteTipo() !== $repo::emittenteTipo()
+            || $sanzione->getStato() !== ESanzionePilota::STATO_ATTIVA) {
+            throw new InvalidArgumentException(
+                'Sanzione non trovata, non di tua competenza o non attiva.'
+            );
+        }
+
+        $dataFineNorm = null;
+        $finoA        = null;
+        if ($tipo === ESanzionePilota::TIPO_SOSPENSIONE) {
+            $dataFineNorm = self::validaDataFine($dataFine);
+            $finoA        = $dataFineNorm . ' 23:59:59';
+        }
+
+        $causaPren = $repo::causaStorno($tipo, $dataFineNorm);
+        $pilotaId  = $sanzione->getPilotaId();
+        $stornate  = [];
+
+        FPersistentManager::transaction(static function () use (
+            $repo, $sanzione, $tipo, $dataFineNorm, $gestoreId, $pilotaId, $finoA, $causaPren, &$stornate
+        ): void {
+            $sanzione->setTipo($tipo);
+            // Il ban è permanente: la data di fine non ha senso e viene azzerata.
+            $sanzione->setDataFine($tipo === ESanzionePilota::TIPO_BAN ? null : $dataFineNorm);
+
+            $repo::stornaPrenotazioniFuture($gestoreId, $pilotaId, $finoA, $causaPren, $stornate);
+
+            FPersistentManager::flush();
+        });
+
+        self::emettiNoteCredito($stornate, $causaPren);
+
+        return count($stornate);
+    }
+
+    /**
+     * Revoca una sanzione attiva del gestore verso il pilota, senza ripristinare le prenotazioni già annullate.
+     */
+    public static function revoca(int $sanzioneId, int $gestoreId): bool
+    {
+        $sanzione = FPersistentManager::find(ESanzionePilota::class, $sanzioneId);
+        if (!$sanzione instanceof ESanzionePilota
+            || $sanzione->getGestoreId() !== $gestoreId
+            || $sanzione->getEmittenteTipo() !== static::emittenteTipo()
+            || $sanzione->getStato() !== ESanzionePilota::STATO_ATTIVA) {
+            return false;
+        }
+
+        $sanzione->revoca();
+        FPersistentManager::flush();
+
+        return true;
+    }
+
+    /**
+     * Annulla le prenotazioni future del pilota sul gestore, fino alla data indicata (o tutte se null),
+     */
+    protected static function stornaPrenotazioniFuture(
+        int $gestoreId,
+        int $pilotaId,
+        ?string $finoA,
+        string $causaPren,
+        array &$stornate
+    ): int {
+        $n = 0;
+        foreach (static::prenotazioniFutureDaStornare($gestoreId, $pilotaId, $finoA) as $row) {
+            $pren = FPersistentManager::find(EPrenotazione::class, (int) ($row['id'] ?? 0));
+            if (!$pren instanceof EPrenotazione || $pren->getStato() !== 'confermata') {
+                continue;
+            }
+            $pren->setStato('cancellata');
+            $pren->setCausaCancellazione($causaPren);
+            $pren->setRimborsoPrevisto($pren->getPrezzoImporto());
+            $stornate[] = ['id' => (int) $pren->getId(), 'importo' => $pren->getPrezzoImporto()];
+            $n++;
+        }
+
+        return $n;
+    }
