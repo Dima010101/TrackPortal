@@ -41,3 +41,59 @@ class FSanzionePilotaNoleggio extends FSanzionePilota
             [':a' => $gestoreId, ':a2' => $gestoreId]
         )->fetchAllAssociative();
     }
+
+     /**
+     * Verifica se un pilota ha effettuato almeno una prenotazione con i veicoli di un'azienda di noleggio
+     * e non è attualmente sanzionato (ban o sospensione) da quell'azienda.
+     */
+    public static function pilotaSanzionabile(int $gestoreId, int $pilotaId): bool
+    {
+        $haNoleggiato = (int) FDataBase::executeQuery(
+            "SELECT COUNT(*)
+             FROM prenotazione p
+             JOIN veicolo_noleggio v ON v.id = p.veicolo_noleggio_id
+             WHERE v.azienda_id = :a AND p.pilota_id = :p",
+            [':a' => $gestoreId, ':p' => $pilotaId]
+        )->fetchOne();
+
+        if ($haNoleggiato < 1) {
+            return false;
+        }
+
+        return self::loadAttivaByGestorePilota($gestoreId, $pilotaId) === null;
+    }
+
+    /** Testo della causa di annullamento per ban (permanente) o sospensione (con scadenza). */
+    protected static function causaStorno(string $tipo, ?string $dataFineNorm): string
+    {
+        return $tipo === ESanzionePilota::TIPO_BAN
+            ? 'Prenotazione annullata: ban del pilota dall\'azienda di noleggio.'
+            : 'Prenotazione annullata: sospensione del pilota dall\'azienda di noleggio fino al '
+                . self::dataItaliana((string) $dataFineNorm) . '.';
+    }
+
+    /**
+     * Restituisce l'elenco delle prenotazioni future di un pilota con i veicoli di un'azienda di noleggio,
+     * che devono essere annullate a causa di un ban o di una sospensione.
+     */
+    protected static function prenotazioniFutureDaStornare(int $gestoreId, int $pilotaId, ?string $finoA): array
+    {
+        $sql = "SELECT p.id, p.prezzo_importo
+                FROM prenotazione p
+                JOIN veicolo_noleggio v ON v.id = p.veicolo_noleggio_id
+                WHERE v.azienda_id = :a
+                  AND p.pilota_id = :p
+                  AND p.stato = 'confermata'
+                  AND p.fine_sessione >= NOW()";
+        $args = [':a' => $gestoreId, ':p' => $pilotaId];
+
+        if ($finoA !== null) {
+            $sql .= ' AND p.inizio_sessione <= :finoA';
+            $args[':finoA'] = $finoA;
+        }
+
+        $sql .= ' ORDER BY p.inizio_sessione ASC';
+
+        return FDataBase::executeQuery($sql, $args)->fetchAllAssociative();
+    }
+}
