@@ -15,6 +15,9 @@ class FPersistentManager
     public const CAMBIO_VALUTA_SUPPORTATE = \FCambioValuta::SUPPORTATE;
     public const CIRCUITO_FOTO_MAX_FOTO = \FCircuitoFoto::MAX_FOTO;
     public const SESSIONE_ORE_GIORNO = \FSessione::ORE_GIORNO;
+    public const TEMPLATE_FATTURA_VISTA_PILOTA = \FTemplateFattura::VISTA_PILOTA;
+    public const SANZIONE_PILOTA_CLASS = \FSanzionePilota::class;
+    public const SANZIONE_PILOTA_NOLEGGIO_CLASS = \FSanzionePilotaNoleggio::class;
 
     /**METODI PROPRI DEL MANAGER */
 
@@ -125,6 +128,22 @@ class FPersistentManager
             ->getSingleScalarResult();
     }
 
+    /**effettua conteggio in base a una condizione */
+    public static function countWhere(string $entityClass, string $dqlWhere, array $parameters = []): int
+    {
+        $meta = self::em()->getClassMetadata($entityClass);
+        $id   = $meta->getSingleIdentifierFieldName();
+        $qb   = self::em()->createQueryBuilder()
+            ->select("COUNT(e.{$id})")
+            ->from($entityClass, 'e')
+            ->where($dqlWhere);
+
+        foreach ($parameters as $key => $value) {
+            $qb->setParameter($key, $value);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
 
 
     /**METODI DI REDIRECT ALLE SINGOLE REPOSITORY */
@@ -646,6 +665,74 @@ class FPersistentManager
     public static function prenotazioneAndamentoMensileAssicurazioni(int $mesi = 6): array
     {
         return \FPrenotazione::andamentoMensileAssicurazioni($mesi);
+    }
+
+    public static function templateFatturaNormalizzaVista(string $vista): string
+    {
+        return \FTemplateFattura::normalizzaVista($vista);
+    }
+
+    public static function templateFatturaSalvaUpload(string $vista, array $file, int $adminId): array
+    {
+        return \FTemplateFattura::salvaUpload($vista, $file, $adminId);
+    }
+
+    public static function templateFatturaEtichettaVista(string $vista): string
+    {
+        return \FTemplateFattura::etichettaVista($vista);
+    }
+
+    public static function templateFatturaIsVistaFattura(string $vista): bool
+    {
+        return \FTemplateFattura::isVistaFattura($vista);
+    }
+
+    public static function templateFatturaDescrizioneViste(): array
+    {
+        return \FTemplateFattura::descrizioneViste();
+    }
+
+    public static function templateFatturaCaricaAttivo(string $vista = \FTemplateFattura::VISTA_PILOTA): array
+    {
+        return \FTemplateFattura::caricaAttivo($vista);
+    }
+
+    public static function templateFatturaAnteprimaRender(string $vista): array
+    {
+        return \FTemplateFattura::anteprimaRender($vista);
+    }
+
+    /** LA PARTE DI SOSPENSIONE NON RIMANDA AD UNA REPOSITORY PERCHE ESSA DIPENDE 
+     *  DA CHI SANZIONA QUINDI RIMANE TUTTO QUA E LA REPO è PASSATA OGNI VOLTA */
+
+    public static function sanzioneRevoca(string $repo, int $sanzioneId, int $gestoreId): bool
+    {
+        return $repo::revoca($sanzioneId, $gestoreId);
+    }
+
+    public static function sanzioneModificaPeriodo(string $repo, int $sanzioneId, int $gestoreId, string $tipo, ?string $dataFine): int
+    {
+        return $repo::modificaPeriodo($sanzioneId, $gestoreId, $tipo, $dataFine);
+    }
+
+    public static function sanzioneApplica(string $repo, int $gestoreId, int $pilotaId, string $tipo, ?string $dataFine, ?string $motivo): int
+    {
+        return $repo::applica($gestoreId, $pilotaId, $tipo, $dataFine, $motivo);
+    }
+
+    public static function sanzioneLoadByGestore(string $repo, int $gestoreId): array
+    {
+        return $repo::loadByGestore($gestoreId);
+    }
+
+    public static function sanzionePilotiSanzionabili(string $repo, int $gestoreId): array
+    {
+        return $repo::pilotiSanzionabili($gestoreId);
+    }
+
+    public static function sanzionePilotaSanzionabile(string $repo, int $gestoreId, int $pilotaId): bool
+    {
+        return $repo::pilotaSanzionabile($gestoreId, $pilotaId);
     }
 
 }
