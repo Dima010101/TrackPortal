@@ -230,3 +230,209 @@ class FTemplateFattura
 
         return self::caricaAttivo($vista);
     }
+
+    /**
+     * Valida il file caricato per il template, lanciando eccezioni in caso di problemi.
+     */
+    public static function validaUpload(array $file): void
+    {
+        if ($file === [] || !isset($file['error'])) {
+            throw new InvalidArgumentException('Nessun file caricato.');
+        }
+
+        $err = (int) $file['error'];
+        if ($err === UPLOAD_ERR_NO_FILE) {
+            throw new InvalidArgumentException('Seleziona un file template da caricare.');
+        }
+        if ($err === UPLOAD_ERR_INI_SIZE || $err === UPLOAD_ERR_FORM_SIZE) {
+            throw new InvalidArgumentException('Il file supera la dimensione massima consentita (512 KB).');
+        }
+        if ($err !== UPLOAD_ERR_OK) {
+            throw new RuntimeException('Errore durante l\'upload del file (codice ' . $err . ').');
+        }
+
+        $tmp = (string) ($file['tmp_name'] ?? '');
+        if ($tmp === '' || !is_uploaded_file($tmp)) {
+            throw new InvalidArgumentException('Upload non valido o sessione scaduta. Riprova.');
+        }
+
+        $size = (int) ($file['size'] ?? 0);
+        if ($size <= 0 || $size > self::MAX_BYTES) {
+            throw new InvalidArgumentException('Dimensione file non valida (max 512 KB).');
+        }
+
+        $nome = (string) ($file['name'] ?? '');
+        $ext  = strtolower(pathinfo($nome, PATHINFO_EXTENSION));
+        if (!in_array($ext, self::ESTENSIONI_AMMESSE, true)) {
+            throw new InvalidArgumentException(
+                'Formato non consentito. Sono ammessi solo file .html, .htm o .tpl.'
+            );
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime  = (string) $finfo->file($tmp);
+        if ($mime !== '' && !in_array($mime, self::MIME_AMMESSI, true)) {
+            throw new InvalidArgumentException(
+                'Tipo MIME non consentito (' . $mime . '). Carica un documento HTML o template testuale.'
+            );
+        }
+    }
+
+    public static function validaContenuto(string $body): void
+    {
+        if (trim($body) === '') {
+            throw new InvalidArgumentException('Il file template è vuoto.');
+        }
+
+        $lower = strtolower($body);
+        $vietati = ['<?php', '<?=', '<script', 'javascript:', 'eval(', 'base64_decode('];
+        foreach ($vietati as $token) {
+            if (str_contains($lower, $token)) {
+                throw new InvalidArgumentException(
+                    'Il contenuto del template contiene elementi non consentiti per motivi di sicurezza.'
+                );
+            }
+        }
+    }
+
+    private static function pathCustom(string $vista, bool $ensureDir = false): ?string
+    {
+        $vista = self::normalizzaVista($vista);
+        if ($ensureDir) {
+            self::ensureDirectories();
+        }
+
+        $path = self::directoryCustom() . '/pdf_' . $vista . '.tpl';
+
+        return is_readable($path) || $ensureDir ? $path : null;
+    }
+
+    private static function ensureDirectories(): void
+    {
+        foreach ([
+            dirname(self::pathManifest()),
+            self::directoryCustom(),
+            self::directoryBackup(),
+        ] as $dir) {
+            if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+                throw new RuntimeException('Impossibile creare la directory: ' . $dir);
+            }
+        }
+    }
+
+    /**
+     * Legge il manifest dei template personalizzati, restituendo un array associativo.
+     */
+    private static function leggiManifest(): array
+    {
+        $path = self::pathManifest();
+        if (!is_readable($path)) {
+            return [];
+        }
+
+        $json = json_decode((string) file_get_contents($path), true);
+
+        return is_array($json) ? $json : [];
+    }
+
+    /**
+     * Scrive il manifest dei template personalizzati, sovrascrivendo il file esistente.
+     */
+    private static function scriviManifest(array $data): void
+    {
+        self::ensureDirectories();
+        $path = self::pathManifest();
+        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        if ($json === false || file_put_contents($path, $json . "\n", LOCK_EX) === false) {
+            throw new RuntimeException('Impossibile aggiornare il manifest dei template.');
+        }
+    }
+
+    /**
+     * Dati di esempio per l'anteprima del template, a seconda della vista.
+     */
+    private static function datiEsempio(string $vista): array
+    {
+        $base = [
+            'id'                    => 0,
+            'codice_identificativo' => 'TP-DEMO0001',
+            'prezzo_importo'        => 189.50,
+            'imponibile_accesso'    => 139.34,
+            'imponibile_noleggio'   => 25.17,
+            'prezzo_valuta'         => 'EUR',
+            'stato'                 => 'confermata',
+            'data_inserimento'      => (new DateTimeImmutable())->format('Y-m-d H:i:s'),
+            'inizio_sessione'  => (new DateTimeImmutable('+3 days'))->format('Y-m-d 09:00:00'),
+            'fine_sessione'    => (new DateTimeImmutable('+3 days'))->format('Y-m-d 12:00:00'),
+            'assicurazione'         => true,
+            'nome_circuito'         => 'Autodromo Demo',
+            'circuito_id'           => 1,
+            'sconto_importo'        => 15.00,
+            'promozione_titolo'     => 'Promo benvenuto',
+            'promozione_descrizione'=> 'Sconto dimostrativo per anteprima template.',
+            'targa_veicolo'         => 'AB123CD',
+            'veicolo_noleggio_id'   => null,
+            'v_marca'               => 'Porsche',
+            'v_modello'             => '911 GT3',
+            'v_targa'               => 'GT3-DEMO',
+            'v_categoria'           => 'auto',
+            'v_anno'                => 2022,
+            'v_potenza_cv'          => 510,
+            'v_capienza'            => 2,
+            'pilota_nome'           => 'Mario',
+            'pilota_cognome'        => 'Verdi',
+        ];
+
+        if ($vista === self::VISTA_NOLEGGIO) {
+            $base['veicolo_noleggio_id'] = 1;
+            $base['targa_veicolo']       = null;
+        }
+
+        return $base;
+    }
+
+    /**
+     * Dati di esempio per l'anteprima del template di documento fiscale (fattura), con righe e totali.
+     */
+    private static function datiEsempioDocumento(): array
+    {
+        $doc = [
+            'tipo'                    => 'fattura',
+            'numero_formattato'       => '2026/0001',
+            'data_emissione'          => (new DateTimeImmutable())->format('Y-m-d'),
+            'causale'                 => 'Sessione in pista — documento dimostrativo',
+            'valuta'                  => 'EUR',
+            'emittente_denominazione' => 'TrackPortal S.r.l.',
+            'emittente_piva'          => '01234567890',
+            'emittente_cf'            => '01234567890',
+            'emittente_indirizzo'     => 'Via dei Circuiti 1, 20100 Milano (MI)',
+            'cliente_denominazione'   => 'Mario Verdi',
+            'cliente_piva'            => '',
+            'cliente_cf'              => 'VRDMRA85M01F205X',
+            'cliente_indirizzo'       => 'Via Roma 10, 00100 Roma (RM)',
+            'totale_imponibile'       => 155.33,
+            'totale_iva'              => 34.17,
+            'totale_documento'        => 189.50,
+            'bollo'                   => 0,
+        ];
+
+        $righe = [
+            [
+                'descrizione'  => 'Sessione in pista — Autodromo Demo',
+                'imponibile'   => 139.34,
+                'aliquota_iva' => 22,
+                'natura_iva'   => '',
+                'imposta'      => 30.66,
+            ],
+            [
+                'descrizione'  => 'Assicurazione giornaliera',
+                'imponibile'   => 15.99,
+                'aliquota_iva' => 22,
+                'natura_iva'   => '',
+                'imposta'      => 3.51,
+            ],
+        ];
+
+        return ['doc' => $doc, 'righe' => $righe];
+    }
+}
