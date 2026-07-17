@@ -238,3 +238,147 @@ class FFatturazione
             'imposta'         => $imposta,
         ];
     }
+
+    /**
+     * Crea un documento fiscale (fattura o nota di credito) con le righe specificate.
+     */
+    private static function creaDocumento(array $opts): void
+    {
+        $righe = $opts['righe'] ?? [];
+        if ($righe === []) {
+            return;
+        }
+
+        $anno   = (int) date('Y');
+        $numero = FDocumentoFiscale::prossimoNumero((string) $opts['emittente_tipo'], (int) $opts['emittente_id'], $anno);
+
+        $totImp  = 0.0;
+        $totIva  = 0.0;
+        $haNatura = false;
+        foreach ($righe as $r) {
+            $totImp += (float) $r['imponibile'];
+            $totIva += (float) $r['imposta'];
+            if (!empty($r['natura_iva'])) {
+                $haNatura = true;
+            }
+        }
+        $totImp = round($totImp, 2);
+        $totIva = round($totIva, 2);
+
+        // Se l'IVA è zero e ci sono righe con natura speciale, e l'imponibile supera la soglia, applica il bollo.
+        $bollo = ($totIva == 0.0 && $haNatura && $totImp > self::BOLLO_SOGLIA) ? self::BOLLO_IMPORTO : 0.0;
+
+        FDocumentoFiscale::inserisci([
+            'tipo'                     => $opts['tipo'],
+            'emittente_tipo'           => $opts['emittente_tipo'],
+            'emittente_id'             => $opts['emittente_id'],
+            'anno'                     => $anno,
+            'numero'                   => $numero,
+            'numero_formattato'        => $anno . '/' . str_pad((string) $numero, 4, '0', STR_PAD_LEFT),
+            'data_emissione'           => (new DateTimeImmutable('now'))->format('Y-m-d H:i:s'),
+            'emittente_denominazione'  => $opts['emittente_denominazione'],
+            'emittente_piva'           => $opts['emittente_piva'] ?? '',
+            'emittente_cf'             => $opts['emittente_cf'] ?? null,
+            'emittente_indirizzo'      => $opts['emittente_indirizzo'] ?? '',
+            'cliente_tipo'             => $opts['cliente_tipo'],
+            'cliente_id'               => $opts['cliente_id'],
+            'cliente_denominazione'    => $opts['cliente_denominazione'],
+            'cliente_piva'             => $opts['cliente_piva'] ?? null,
+            'cliente_cf'               => $opts['cliente_cf'] ?? null,
+            'cliente_indirizzo'        => $opts['cliente_indirizzo'] ?? '',
+            'prenotazione_id'          => $opts['prenotazione_id'] ?? null,
+            'documento_riferimento_id' => $opts['documento_riferimento_id'] ?? null,
+            'causale'                  => $opts['causale'] ?? null,
+            'valuta'                   => $opts['valuta'] ?? 'EUR',
+            'totale_imponibile'        => $totImp,
+            'totale_iva'               => $totIva,
+            'totale_documento'         => round($totImp + $totIva, 2),
+            'bollo'                    => $bollo,
+        ], $righe);
+    }
+
+    /**
+     * Restituisce i dati dell'emittente per la piattaforma.
+     */
+    private static function emittentePiattaforma(EConfigurazionePiattaforma $config): array
+    {
+        return [
+            'emittente_tipo'          => FDocumentoFiscale::EM_PIATTAFORMA,
+            'emittente_id'            => 0,
+            'emittente_denominazione' => $config->getFiscDenominazione(),
+            'emittente_piva'          => $config->getFiscPartitaIva(),
+            'emittente_cf'            => $config->getFiscCodiceFiscale(),
+            'emittente_indirizzo'     => $config->getFiscIndirizzo(),
+        ];
+    }
+
+    /**
+     * Restituisce i dati della prenotazione, del pilota e del gestore circuito.
+     */
+    private static function datiPrenotazione(int $prenId): ?array
+    {
+        $r = FDataBase::executeQuery(
+            "SELECT p.id, p.pilota_id, p.codice_identificativo, p.prezzo_valuta,
+                    p.imponibile_accesso, p.imponibile_noleggio, p.imponibile_assicurazione,
+                    p.inizio_sessione, p.fine_sessione, p.assicurazione, p.veicolo_noleggio_id,
+                    c.nome_circuito, c.gestore_id,
+                    gc.nome_societa AS gc_societa, gc.partita_iva AS gc_piva, gc.codice_fiscale AS gc_cf,
+                    gc.indirizzo AS gc_ind, gc.cap AS gc_cap, gc.comune AS gc_comune, gc.provincia AS gc_prov,
+                    up.nome AS pil_nome, up.cognome AS pil_cognome,
+                    pil.codice_fiscale AS pil_cf, pil.indirizzo AS pil_ind, pil.cap AS pil_cap,
+                    pil.comune AS pil_comune, pil.provincia AS pil_prov,
+                    pil.fatt_indirizzo AS pil_fatt_ind, pil.fatt_cap AS pil_fatt_cap,
+                    pil.fatt_comune AS pil_fatt_comune, pil.fatt_provincia AS pil_fatt_prov
+             FROM prenotazione p
+             JOIN circuito c ON c.id = p.circuito_id
+             JOIN gestore_circuiti gc ON gc.id = c.gestore_id
+             JOIN account up ON up.id = p.pilota_id
+             JOIN pilota pil ON pil.id = p.pilota_id
+             WHERE p.id = :id",
+            [':id' => $prenId]
+        )->fetchAssociative();
+
+        return $r ?: null;
+    }
+
+    /**
+     * Restituisce i dati del veicolo a noleggio e della relativa azienda di noleggio.
+     */
+    private static function datiNoleggio(int $veicoloId): ?array
+    {
+        $r = FDataBase::executeQuery(
+            "SELECT v.marca, v.modello, v.targa, v.azienda_id,
+                    an.nome_societa AS an_societa, an.partita_iva AS an_piva, an.codice_fiscale AS an_cf,
+                    an.indirizzo AS an_ind, an.cap AS an_cap, an.comune AS an_comune, an.provincia AS an_prov
+             FROM veicolo_noleggio v
+             JOIN azienda_noleggio an ON an.id = v.azienda_id
+             WHERE v.id = :vid",
+            [':vid' => $veicoloId]
+        )->fetchAssociative();
+
+        return $r ?: null;
+    }
+
+    private static function formatIndirizzo(?string $ind, ?string $cap, ?string $comune, ?string $prov): string
+    {
+        $via    = trim((string) $ind);
+        $citta  = trim(trim((string) $cap) . ' ' . trim((string) $comune));
+        $provS  = trim((string) $prov);
+        if ($provS !== '') {
+            $citta = trim($citta . ' (' . $provS . ')');
+        }
+
+        return trim(implode(' · ', array_filter([$via, $citta])));
+    }
+
+    private static function formatPeriodo(string $inizio, string $fine): string
+    {
+        $i = strtotime($inizio);
+        $f = strtotime($fine);
+        if ($i === false || $f === false) {
+            return '';
+        }
+
+        return 'dal ' . date('d/m/Y H:i', $i) . ' al ' . date('d/m/Y H:i', $f);
+    }
+}
