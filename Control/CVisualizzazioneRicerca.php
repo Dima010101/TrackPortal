@@ -1,7 +1,7 @@
 <?php
 
 /**
- * usecase: visualizzazione e ricerca (UC 5)
+ * visualizzazione e ricerca (UC 5)
  * gestisce home page, ricerca e visualizzazione dei circuiti
  */
 

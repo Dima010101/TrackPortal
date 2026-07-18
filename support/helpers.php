@@ -245,7 +245,7 @@ function cookie_sessione_presente(): bool
     return $nome !== '' && !empty($_COOKIE[$nome]);
 }
 
-/** Data URI del logo per creazione PDF */
+/** Dati del logo per creazione PDF */
 function logo_data_uri(): string
 {
     $path = logo_path();
