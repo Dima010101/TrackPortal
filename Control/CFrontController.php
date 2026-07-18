@@ -29,7 +29,6 @@ class CFrontController
         'promozioni'       => ['CGestioneAggiuntaPromozioni', null],
         //Gestione account
         'account'          => ['CGestioneAccount', null],
-        'documentoPilota'  => ['CGestioneAccount', null],
         //Approvazione affiliazione
         'affiliazioni'     => ['CApprovazioneAffiliazione', null],
         //Sospensione e ban
@@ -41,29 +40,56 @@ class CFrontController
         'valute' => ['CPrenotazioneSessione', 'tassiCambio'],
     ];
 
-    /**
-     * avvia l'applicazione per la richiesta HTTP corrente
-     */
+    /** avvia l'applicazione per la richiesta HTTP corrente */
     public function run(): void
     {
-        $segments = $this->segmenti($_SERVER['REQUEST_URI'] ?? '/');
+        $segments = [];
 
-        if (($segments[0] ?? null) === 'api') {
-            $this->dispatchApi(array_slice($segments, 1));
-            return;
+        try {
+            $segments = $this->segmenti($_SERVER['REQUEST_URI'] ?? '/');
+
+            if (($segments[0] ?? null) === 'api') {
+                $this->dispatchApi(array_slice($segments, 1));
+                return;
+            }
+
+            if ($this->metodoHttp() === 'POST' && !cookie_sessione_presente()) {
+                VError::cookieDisabilitati();
+                return;
+            }
+
+            $this->dispatch($segments);
+        } catch (Throwable $e) {
+            $this->erroreInterno($e, ($segments[0] ?? null) === 'api');
         }
-
-        if ($this->metodoHttp() === 'POST' && !cookie_sessione_presente()) {
-            VError::cookieDisabilitati();
-            return;
-        }
-
-        $this->dispatch($segments);
     }
 
-    /**
-     * ricostruisce controller + azione dai segmenti
-     */
+    /** eccezione non gestita: i dettagli vanno nel log, a schermo solo con APP_DEBUG */
+    private function erroreInterno(Throwable $e, bool $json): void
+    {
+        error_log(sprintf(
+            'Errore non gestito: %s in %s:%d',
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine()
+        ));
+
+        try {
+            if ($json) {
+                json_print(['error' => 'Internal server error'], 500);
+                return;
+            }
+            VError::erroreInterno($e);
+        } catch (Throwable) {
+            // anche la pagina d'errore è fallita: risposta minima
+            if (!headers_sent()) {
+                http_response_code(500);
+            }
+            echo 'Errore interno del server.';
+        }
+    }
+
+    /** ricostruisce controller + azione dai segmenti */
     private function dispatch(array $segments): void
     {
         $resource = $segments[0] ?? 'home';
@@ -85,9 +111,7 @@ class CFrontController
         (new $controller())->$action(...$params);
     }
 
-    /**
-     * ramo api
-     */
+    /** ramo api */
     private function dispatchApi(array $segments): void
     {
         $spec = count($segments) === 1 ? (self::RISORSE_API[$segments[0]] ?? null) : null;
@@ -106,9 +130,7 @@ class CFrontController
         (new $controller())->$action();
     }
 
-    /**
-     * risolve i segmenti che seguono la risorsa in [metodo, parametri]
-     */
+    /** risolve i segmenti che seguono la risorsa in [metodo, parametri] */
     private function risolvi(string $controller, array $rest, string $method, ?string $default = null): array
     {
         if ($rest === []) {
@@ -121,7 +143,7 @@ class CFrontController
             if ($verb !== $method) {
                 continue;
             }
-            $params = $this->matchPattern($pattern, $rest);
+            $params = $this->combaciaPattern($pattern, $rest);
             if ($params !== null) {
                 return [(string) $target, $params];
             }
@@ -130,11 +152,8 @@ class CFrontController
         return [null, []];
     }
 
-    /**
-     * confronta un pattern di rotta con i segmenti dell'URL
-     * ritorna i parametri catturati o null se non combacia
-     */
-    private function matchPattern(string $pattern, array $rest): ?array
+    /** confronta un pattern di rotta coi segmenti: ritorna i parametri o null */
+    private function combaciaPattern(string $pattern, array $rest): ?array
     {
         $patSegs = $pattern === '' ? [] : explode('/', $pattern);
         if (count($patSegs) !== count($rest)) {
@@ -158,9 +177,7 @@ class CFrontController
         return $params;
     }
 
-    /**
-     * azione predefinita di un controller quando l'URL non specifica un'azione
-     */
+    /** azione predefinita di un controller quando l'URL non specifica un'azione */
     private function azionePredefinita(string $controller): string
     {
         if (class_exists($controller) && defined($controller . '::DEFAULT_ACTION')) {
@@ -170,9 +187,7 @@ class CFrontController
         return 'index';
     }
 
-    /**
-     * vero se $controller::$action esiste, è un metodo d'azione pubblico
-     */
+    /** vero se $controller::$action esiste, è un metodo d'azione pubblico */
     private function azioneInvocabile(string $controller, string $action, int $argc): bool
     {
         if (!class_exists($controller) || !method_exists($controller, $action)) {
@@ -190,9 +205,7 @@ class CFrontController
         return $argc >= $minimi && $argc <= $massimi;
     }
 
-    /**
-     * pagina 404 o payload JSON 404
-     */
+    /** pagina 404 o payload JSON 404 */
     private function nonTrovato(bool $json): void
     {
         if ($json) {
@@ -203,9 +216,7 @@ class CFrontController
         VError::nonTrovato();
     }
 
-    /**
-     * metodo HTTP della richiesta
-     */
+    /** metodo HTTP della richiesta */
     private function metodoHttp(): string
     {
         $metodo = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
@@ -213,22 +224,23 @@ class CFrontController
         return $metodo === 'HEAD' ? 'GET' : $metodo;
     }
 
-    /**
-     * normalizza l'URI in segmenti di percorso
-     */
+    /** normalizza l'URI in segmenti di percorso */
     private function segmenti(string $requestUri): array
     {
         $path = parse_url($requestUri, PHP_URL_PATH) ?: '/';
 
         $base = rtrim(APP_BASE_URL, '/');
-        if ($base !== '' && strpos($path, $base) === 0) {
+        if ($base !== '' && str_starts_with($path, $base)) {
             $path = substr($path, strlen($base));
         }
-        $path = rawurldecode('/' . ltrim($path, '/'));
 
-        return array_values(array_filter(
-            explode('/', $path),
-            static fn(string $s): bool => $s !== ''
+        // decode dopo lo split: un %2F nel segmento non deve diventare separatore
+        return array_values(array_map(
+            'rawurldecode',
+            array_filter(
+                explode('/', $path),
+                static fn(string $s): bool => $s !== ''
+            )
         ));
     }
 }

@@ -124,13 +124,9 @@ class EPilota extends EAccount
     public function getFattProvincia(): string                        { return $this->fattProvincia; }
     public function setFattProvincia(string $v): void                 { $this->fattProvincia = $v; }
 
-    /**
-     * un pilota può prenotare solo con entrambi i documenti caricati e approvati dall'amministrazione
-     * ritorna il messaggio di blocco o null se il pilota è in regola
-     */
+    /** blocca la prenotazione senza entrambi i documenti caricati e approvati: messaggio o null */
     public function erroreDocumenti(): ?string
     {
-        // vanno caricati entrambi.
         $cert = trim((string) $this->certificatoMedicoPath);
         $lic  = trim((string) $this->licenzaPath);
         if ($cert === '' || $lic === '') {
@@ -150,10 +146,7 @@ class EPilota extends EAccount
             . 'non puoi ancora prenotare le sessioni.';
     }
 
-    /**
-     * un pilota con licenza scaduta non può prenotare
-     * ritorna il messaggio di blocco oppure null se la licenza è valida
-     */
+    /** blocca la prenotazione con licenza scaduta: messaggio o null se valida */
     public function erroreLicenza(): ?string
     {
         $scadenza = trim((string) ($this->scadenzaLicenza ?? ''));
@@ -161,13 +154,11 @@ class EPilota extends EAccount
             return null;
         }
 
-        try {
-            $dataScadenza = new DateTimeImmutable($scadenza);
-        } catch (Exception) {
+        $dataScadenza = DateTimeImmutable::createFromFormat('!Y-m-d', $scadenza);
+        if ($dataScadenza === false) {
             return null;
         }
 
-        // La licenza è valida nel giorno di scadenza; scade dal giorno successivo.
         if ($dataScadenza < new DateTimeImmutable('today')) {
             return 'La tua licenza è scaduta il ' . $dataScadenza->format('d/m/Y')
                 . '. Aggiorna la data di scadenza dal tuo account per poter prenotare le sessioni.';
