@@ -8,11 +8,7 @@ class FVeicoloNoleggio extends FRepository
         return EVeicoloNoleggio::class;
     }
 
-    public static function store(EVeicoloNoleggio $v): int
-    {
-        $v->setTarga(strtoupper($v->getTarga()));
-        return self::persistAndId($v);
-    }
+    public static function store(EVeicoloNoleggio $v): int { return self::persistAndId($v); }
 
     public static function loadByAzienda(int $aziendaId, ?string $categoria = null): array
     {

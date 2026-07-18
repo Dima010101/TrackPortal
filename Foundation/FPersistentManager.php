@@ -83,13 +83,9 @@ class FPersistentManager
     }
 
 
-    /**Persiste un oggetto Entity e ne restituisce l'identificatore */
+    /**Persiste un oggetto Entity (usando sempre persist e flush) e ne restituisce l'identificatore */
     public static function store(object $entity): mixed
     {
-        if ($entity instanceof EVeicoloNoleggio) {
-            return FVeicoloNoleggio::store($entity);
-        }
-
         self::persist($entity);
 
         // L'identificatore generato viene letto dai metadati Doctrine

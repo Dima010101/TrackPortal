@@ -54,7 +54,7 @@ class FEntityManager
             http_response_code(500);
             die(
                 '<h1>Database non raggiungibile</h1>'
-                . '<p>Verifica che MySQL di XAMPP sia avviato e che il database <code>'
+                . '<p>Verifica che MySQL sia avviato e che il database <code>'
                 . htmlspecialchars($dbName) . '</code> sia stato importato.</p>'
                 . '<pre>' . htmlspecialchars($e->getMessage()) . '</pre>'
             );
