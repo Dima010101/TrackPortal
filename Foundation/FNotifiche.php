@@ -369,7 +369,6 @@ class FNotifiche
 
     // -- Helper interni -----------------------------------------------------
 
-    /** @param list<array{data:string,name:string,mime?:string}> $allegati */
     private static function messaggio(
         string $toEmail,
         string $toName,
