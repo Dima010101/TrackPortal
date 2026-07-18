@@ -1,15 +1,7 @@
 <?php
 
 /**
- * use case Aggiornare la schedule del circuito (uc 2).
- *
- * Operazioni di sistema:
- *  - visualizzaCalendario()           → 1a/1b: calendario settimanale del circuito
- *  - selezionaSlot()                  → 2a/2b: scheda dello slot (sessione o form vuoto)
- *  - salvaSessione()                  → 3a/3b: crea/aggiorna la sessione e torna al calendario
- *  - annullaSessione()                → 4a: scheda di conferma annullamento con motivazione
- *  - confermaAnnullamentoSessione()   → 4b: annulla e storna al 100% le prenotazioni
- *
+ * aggiorna la schedule del circuito (uc 2).
  * raccoglie l'input, delega i dati della griglia a Foundation e le decisioni di dominio alle entità; alle View passa solo il risultato.
  */
 class CAggiornareScheduleCircuito

@@ -126,10 +126,8 @@ class FMailer
 
     /**
      * Trasporto di sviluppo: scrive l'email in var/mail/; gli allegati vengono
-     * salvati come file a fianco.
-     *
-     * @param list<array{data: string, name: string, mime?: string}> $allegati
-     */
+     * salvati come file a fianco
+    */
     private static function inviaFile(
         string $toEmail,
         string $toName,

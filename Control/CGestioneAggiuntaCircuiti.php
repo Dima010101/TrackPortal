@@ -1,14 +1,8 @@
 <?php
 
 /**
- * caso d'uso Gestione e aggiunta circuiti (uc 8).
- *
- * Operazioni di sistema:
- *  - elencaCircuitiGestiti() → 1a/1b: elenco «I miei circuiti»
- *  - nuovoCircuito()         → 2a/2b: form di aggiunta circuito
- *  - creaCircuito()          → 3a/3b: validazione e conferma dell'aggiunta
- *  - modificaCircuito()      → gestione: form di modifica precompilato
- *  - aggiornaCircuito()      → gestione: salvataggio delle modifiche*/
+ *  Gestione e aggiunta circuiti (uc 8)
+ */
 
 class CGestioneAggiuntaCircuiti
 {
