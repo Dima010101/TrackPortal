@@ -18,6 +18,9 @@ class FPersistentManager
     public const TEMPLATE_FATTURA_VISTA_PILOTA = \FTemplateFattura::VISTA_PILOTA;
     public const SANZIONE_PILOTA_CLASS = \FSanzionePilota::class;
     public const SANZIONE_PILOTA_NOLEGGIO_CLASS = \FSanzionePilotaNoleggio::class;
+    public const DOCUMENTO_PILOTA_TIPI = \FDocumentoPilota::TIPI;
+
+    
 
     /**METODI PROPRI DEL MANAGER */
 
@@ -702,6 +705,96 @@ class FPersistentManager
         return \FTemplateFattura::anteprimaRender($vista);
     }
 
+    public static function pilotaRimuoviDocumento(int $uid, string $tipo): ?string
+    {
+        return \FPilota::rimuoviDocumento($uid, $tipo);
+    }
+
+    public static function documentoPilotaElimina(?string $webPath): void
+    {
+        \FDocumentoPilota::elimina($webPath);
+    }
+
+    public static function pilotaLoadByUtente(int $uid): ?array
+    {
+        return \FPilota::loadByUtente($uid);
+    }
+
+    public static function documentoPilotaInvia(int $pilotaId, string $tipo, ?string $webPath): bool
+    {
+        return \FDocumentoPilota::invia($pilotaId, $tipo, $webPath);
+    }
+
+    public static function documentoPilotaFileVuoto(array $file): bool
+    {
+        return \FDocumentoPilota::fileVuoto($file);
+    }
+
+    public static function documentoPilotaValidaUpload(array $file): void
+    {
+        \FDocumentoPilota::validaUpload($file);
+    }
+
+    public static function documentoPilotaSalva(int $pilotaId, string $tipo, array $file): string
+    {
+        return \FDocumentoPilota::salva($pilotaId, $tipo, $file);
+    }
+
+    public static function pilotaAggiornaDocumenti(int $uid, ?string $certPath, ?string $licPath): void
+    {
+        \FPilota::aggiornaDocumenti($uid, $certPath, $licPath);
+    }
+
+    public static function pilotaUpdateDocumentiStato(int $uid, string $stato): void
+    {
+        \FPilota::updateDocumentiStato($uid, $stato);
+    }
+
+    public static function affiliazionePilotaDocumentiCompleti(array $row): bool
+    {
+        return \FAffiliazione::pilotaDocumentiCompleti($row);
+    }
+
+    public static function notificheNotificaAdminDocumentiPilota(int $pilotaId): void
+    {
+        \FNotifiche::notificaAdminDocumentiPilota($pilotaId);
+    }
+
+    public static function accountLoadById(int $id): ?array
+    {
+        return \FAccount::loadById($id);
+    }
+
+    public static function gestoreCircuitiLoadByUtente(int $uid): ?array
+    {
+        return \FGestoreCircuiti::loadByUtente($uid);
+    }
+
+    public static function gestoreNoleggioLoadByUtente(int $uid): ?array
+    {
+        return \FGestoreNoleggio::loadByUtente($uid);
+    }
+
+    public static function accountLoadByEmail(string $email): ?array
+    {
+        return \FAccount::loadByEmail($email);
+    }
+
+    public static function accountUpdateAnagrafica(int $id, string $nome, string $cognome, string $email): void
+    {
+        \FAccount::updateAnagrafica($id, $nome, $cognome, $email);
+    }
+
+    public static function accountUpdatePasswordHash(int $id, string $hash): void
+    {
+        \FAccount::updatePasswordHash($id, $hash);
+    }
+
+    public static function pilotaUpdateProfilo(int $uid, string $categoria, ?string $licenza, ?string $scadenzaLicenza, array $indirizzi = []): void
+    {
+        \FPilota::updateProfilo($uid, $categoria, $licenza, $scadenzaLicenza, $indirizzi);
+    }
+
     /** LA PARTE DI SOSPENSIONE NON RIMANDA AD UNA REPOSITORY PERCHE ESSA DIPENDE 
      *  DA CHI SANZIONA QUINDI RIMANE TUTTO QUA E LA REPO è PASSATA OGNI VOLTA */
 
@@ -734,5 +827,4 @@ class FPersistentManager
     {
         return $repo::pilotaSanzionabile($gestoreId, $pilotaId);
     }
-
 }

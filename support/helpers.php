@@ -260,6 +260,74 @@ function cookie_sessione_presente(): bool
     return $nome !== '' && !empty($_COOKIE[$nome]);
 }
 
+/** normalizza un codice fiscale: maiuscolo, senza spazi. */
+function codice_fiscale_normalizza(string $cf): string
+{
+    return strtoupper(preg_replace('/\s+/', '', $cf) ?? '');
+}
+
+/** valida il formato del codice fiscale italiano */
+function codice_fiscale_valido(string $cf): bool
+{
+    $v = codice_fiscale_normalizza($cf);
+
+    return preg_match(
+        '/^[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$/',
+        $v
+    ) === 1;
+}
+
+/** Valida indirizzo (via, CAP, comune, provincia) i cui campi sono
+ * tutti obbligatori. Restituisce la lista degli errori (vuota se valido).
+ */
+function valida_blocco_indirizzo(
+    string $indirizzo,
+    string $cap,
+    string $comune,
+    string $provincia,
+    string $etichetta
+): array {
+    $errors = [];
+
+    $via = trim($indirizzo);
+    if ($via === '') {
+        $errors[] = "L'indirizzo {$etichetta} è obbligatorio.";
+    } elseif (mb_strlen($via) > 255) {
+        $errors[] = "L'indirizzo {$etichetta} non può superare 255 caratteri.";
+    }
+
+    $c = trim($cap);
+    if ($c === '') {
+        $errors[] = "Il CAP {$etichetta} è obbligatorio.";
+    } elseif (!preg_match('/^\d{5}$/', $c)) {
+        $errors[] = "Il CAP {$etichetta} deve essere di 5 cifre.";
+    }
+
+    $com = trim($comune);
+    if ($com === '') {
+        $errors[] = "Il comune {$etichetta} è obbligatorio.";
+    } elseif (mb_strlen($com) > 120) {
+        $errors[] = "Il comune {$etichetta} non può superare 120 caratteri.";
+    }
+
+    $pr = trim($provincia);
+    if ($pr === '') {
+        $errors[] = "La provincia {$etichetta} è obbligatoria.";
+    } elseif (!preg_match('/^[A-Za-z]{2}$/', $pr)) {
+        $errors[] = "La provincia {$etichetta} deve essere la sigla di 2 lettere (es. MI).";
+    }
+
+    return $errors;
+}
+
+/** Normalizza la sigla provincia in maiuscolo e senza spazi */
+function provincia_normalizza(string $prov): string
+{
+    return strtoupper(trim($prov));
+}
+
+
+
 /**METODI DI HELPERS USATI PER PRESENTATION E TEMPLATES */
 
 /** Markup <img> del logo del sito. */

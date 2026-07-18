@@ -41,7 +41,7 @@ final class FCambioValuta
             return self::formatta($fresco, false);
         }
 
-        // Servizio non raggiungibile: usa l'ultima cache (anche scaduta) …
+        // Servizio non raggiungibile: usa l'ultima cache (anche scaduta)
         if ($cache !== null) {
             return self::formatta($cache, true);
         }
