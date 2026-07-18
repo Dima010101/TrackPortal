@@ -244,3 +244,25 @@ function cookie_sessione_presente(): bool
 
     return $nome !== '' && !empty($_COOKIE[$nome]);
 }
+
+/** Data URI del logo per creazione PDF */
+function logo_data_uri(): string
+{
+    $path = logo_path();
+    if (!is_file($path)) {
+        return '';
+    }
+
+    $svg = file_get_contents($path);
+    if ($svg === false || $svg === '') {
+        return '';
+    }
+
+    return 'data:image/svg+xml;base64,' . base64_encode($svg);
+}
+
+/** definizione percorso assoluto del logo del sito */
+function logo_path(): string
+{
+    return TRACKPORTAL_BASE_DIR . '/public/img/logo.svg';
+}
