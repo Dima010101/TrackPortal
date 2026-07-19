@@ -11,12 +11,14 @@ class FPrenotazione extends FRepository
     public static function loadDettaglio(int $id, int $pilotaId): ?array
     {
         $r = FDataBase::executeQuery(
-            'SELECT p.*, c.nome_circuito, c.id AS circuito_id_join,
+            'SELECT p.*, s.inizio AS inizio_sessione, s.fine AS fine_sessione,
+                    s.circuito_id, c.nome_circuito,
                     pr.titolo AS promozione_titolo,
                     pr.descrizione AS promozione_descrizione,
                     v.marca AS v_marca, v.modello AS v_modello, v.targa AS v_targa
              FROM prenotazione p
-             JOIN circuito c ON c.id = p.circuito_id
+             JOIN sessione s ON s.id = p.sessione_id
+             JOIN circuito c ON c.id = s.circuito_id
              LEFT JOIN promozione pr ON pr.id = p.promozione_id
              LEFT JOIN veicolo_noleggio v ON v.id = p.veicolo_noleggio_id
              WHERE p.id = :id AND p.pilota_id = :u',
@@ -29,12 +31,14 @@ class FPrenotazione extends FRepository
     public static function loadDettaglioByCodice(string $codice, int $pilotaId): ?array
     {
         $r = FDataBase::executeQuery(
-            'SELECT p.*, c.nome_circuito, c.id AS circuito_id_join,
+            'SELECT p.*, s.inizio AS inizio_sessione, s.fine AS fine_sessione,
+                    s.circuito_id, c.nome_circuito,
                     pr.titolo AS promozione_titolo,
                     pr.descrizione AS promozione_descrizione,
                     v.marca AS v_marca, v.modello AS v_modello, v.targa AS v_targa
              FROM prenotazione p
-             JOIN circuito c ON c.id = p.circuito_id
+             JOIN sessione s ON s.id = p.sessione_id
+             JOIN circuito c ON c.id = s.circuito_id
              LEFT JOIN promozione pr ON pr.id = p.promozione_id
              LEFT JOIN veicolo_noleggio v ON v.id = p.veicolo_noleggio_id
              WHERE p.codice_identificativo = :cod AND p.pilota_id = :u',
@@ -51,7 +55,8 @@ class FPrenotazione extends FRepository
                     u.nome, u.cognome, c.nome_circuito
              FROM prenotazione p
              JOIN account u ON u.id = p.pilota_id
-             JOIN circuito c ON c.id = p.circuito_id
+             JOIN sessione s ON s.id = p.sessione_id
+             JOIN circuito c ON c.id = s.circuito_id
              ORDER BY p.data_inserimento DESC, p.id DESC
              LIMIT ' . (int) $limit
         )->fetchAllAssociative();
@@ -78,11 +83,12 @@ class FPrenotazione extends FRepository
         // storico; il gestore vede solo la sua quota (imponibile_accesso).
         return FDataBase::executeQuery(
             "SELECT p.id, p.codice_identificativo, p.imponibile_accesso, p.prezzo_valuta,
-                    p.inizio_sessione, p.fine_sessione, p.stato,
+                    s.inizio AS inizio_sessione, s.fine AS fine_sessione, p.stato,
                     p.pilota_id, c.nome_circuito, u.nome, u.cognome,
                     df.id AS fattura_id, df.numero_formattato AS fattura_numero
              FROM prenotazione p
-             JOIN circuito c ON c.id = p.circuito_id
+             JOIN sessione s ON s.id = p.sessione_id
+             JOIN circuito c ON c.id = s.circuito_id
              JOIN account u ON u.id = p.pilota_id
              LEFT JOIN documento_fiscale df
                     ON df.prenotazione_id = p.id
@@ -119,11 +125,12 @@ class FPrenotazione extends FRepository
         // storico; l'azienda vede solo la sua quota (imponibile_noleggio).
         return FDataBase::executeQuery(
             "SELECT p.id, p.codice_identificativo, p.imponibile_noleggio, p.prezzo_valuta,
-                    p.inizio_sessione, p.fine_sessione, p.stato,
+                    s.inizio AS inizio_sessione, s.fine AS fine_sessione, p.stato,
                     p.pilota_id, u.nome, u.cognome,
                     v.marca AS v_marca, v.modello AS v_modello, v.targa AS v_targa,
                     df.id AS fattura_id, df.numero_formattato AS fattura_numero
              FROM prenotazione p
+             JOIN sessione s ON s.id = p.sessione_id
              JOIN veicolo_noleggio v ON v.id = p.veicolo_noleggio_id
              JOIN account u ON u.id = p.pilota_id
              LEFT JOIN documento_fiscale df
@@ -140,11 +147,13 @@ class FPrenotazione extends FRepository
     public static function loadDettaglioForGestore(int $id, int $gestoreId): ?array
     {
         $r = FDataBase::executeQuery(
-            'SELECT p.*, c.nome_circuito,
+            'SELECT p.*, s.inizio AS inizio_sessione, s.fine AS fine_sessione,
+                    s.circuito_id, c.nome_circuito,
                     u.nome AS pilota_nome, u.cognome AS pilota_cognome,
                     pr.titolo AS promozione_titolo, pr.descrizione AS promozione_descrizione
              FROM prenotazione p
-             JOIN circuito c ON c.id = p.circuito_id
+             JOIN sessione s ON s.id = p.sessione_id
+             JOIN circuito c ON c.id = s.circuito_id
              JOIN account u ON u.id = p.pilota_id
              LEFT JOIN promozione pr ON pr.id = p.promozione_id
              WHERE p.id = :id AND c.gestore_id = :g',
@@ -158,12 +167,13 @@ class FPrenotazione extends FRepository
     {
         $r = FDataBase::executeQuery(
             'SELECT p.id, p.codice_identificativo, p.imponibile_noleggio, p.prezzo_valuta,
-                    p.inizio_sessione, p.fine_sessione, p.stato, p.data_inserimento,
+                    s.inizio AS inizio_sessione, s.fine AS fine_sessione, p.stato, p.data_inserimento,
                     p.sconto_importo, p.rimborso_previsto, p.causa_cancellazione,
                     v.marca AS v_marca, v.modello AS v_modello, v.targa AS v_targa,
                     v.categoria AS v_categoria, v.capienza AS v_capienza,
                     v.potenza_cv AS v_potenza_cv, v.anno AS v_anno
              FROM prenotazione p
+             JOIN sessione s ON s.id = p.sessione_id
              JOIN veicolo_noleggio v ON v.id = p.veicolo_noleggio_id
              WHERE p.id = :id AND v.azienda_id = :a',
             [':id' => $id, ':a' => $aziendaId]
@@ -179,9 +189,9 @@ class FPrenotazione extends FRepository
         $args  = [':u' => $pilotaId];
 
         if ($filtro === 'storico') {
-            $where[] = "(p.stato = 'cancellata' OR (p.stato = 'confermata' AND p.fine_sessione < NOW()))";
+            $where[] = "(p.stato = 'cancellata' OR (p.stato = 'confermata' AND s.fine < NOW()))";
         } else {
-            $where[] = "p.stato = 'confermata' AND p.fine_sessione >= NOW()";
+            $where[] = "p.stato = 'confermata' AND s.fine >= NOW()";
         }
         if ($q !== '') {
             $where[] = '(c.nome_circuito LIKE :q1 OR p.codice_identificativo LIKE :q2)';
@@ -189,25 +199,28 @@ class FPrenotazione extends FRepository
             $args[':q2'] = "%{$q}%";
         }
 
-        $sql = "SELECT p.*, c.nome_circuito, c.id AS circuito_id
+        $sql = "SELECT p.*, s.inizio AS inizio_sessione, s.fine AS fine_sessione,
+                       s.circuito_id, c.nome_circuito
                 FROM prenotazione p
-                JOIN circuito c ON c.id = p.circuito_id
+                JOIN sessione s ON s.id = p.sessione_id
+                JOIN circuito c ON c.id = s.circuito_id
                 WHERE " . implode(' AND ', $where) . '
-                ORDER BY p.inizio_sessione DESC, p.id DESC';
+                ORDER BY s.inizio DESC, p.id DESC';
         return FDataBase::executeQuery($sql, $args)->fetchAllAssociative();
     }
 
     public static function loadProssimeByPilota(int $pilotaId, int $limit = 5): array
     {
         return FDataBase::executeQuery(
-            "SELECT p.id, p.stato, p.codice_identificativo, p.inizio_sessione,
+            "SELECT p.id, p.stato, p.codice_identificativo, s.inizio AS inizio_sessione,
                     p.prezzo_importo, p.prezzo_valuta, p.veicolo_noleggio_id,
                     c.nome_circuito, c.localita
              FROM prenotazione p
-             JOIN circuito c ON c.id = p.circuito_id
-             WHERE p.pilota_id = :u AND p.fine_sessione >= NOW()
+             JOIN sessione s ON s.id = p.sessione_id
+             JOIN circuito c ON c.id = s.circuito_id
+             WHERE p.pilota_id = :u AND s.fine >= NOW()
                AND p.stato = 'confermata'
-             ORDER BY p.inizio_sessione
+             ORDER BY s.inizio
              LIMIT " . (int) $limit,
             [':u' => $pilotaId]
         )->fetchAllAssociative();
@@ -217,16 +230,17 @@ class FPrenotazione extends FRepository
     public static function loadProssimiNoleggiByAzienda(int $aziendaId, int $limit = 6): array
     {
         return FDataBase::executeQuery(
-            "SELECT p.id, p.codice_identificativo, p.inizio_sessione,
+            "SELECT p.id, p.codice_identificativo, s.inizio AS inizio_sessione,
                     p.imponibile_noleggio, p.prezzo_valuta, p.stato,
                     c.nome_circuito,
                     v.marca AS v_marca, v.modello AS v_modello, v.targa AS v_targa
              FROM prenotazione p
+             JOIN sessione s ON s.id = p.sessione_id
              JOIN veicolo_noleggio v ON v.id = p.veicolo_noleggio_id
-             JOIN circuito c ON c.id = p.circuito_id
-             WHERE v.azienda_id = :a AND p.fine_sessione >= NOW()
+             JOIN circuito c ON c.id = s.circuito_id
+             WHERE v.azienda_id = :a AND s.fine >= NOW()
                AND p.stato = 'confermata'
-             ORDER BY p.inizio_sessione
+             ORDER BY s.inizio
              LIMIT " . (int) $limit,
             [':a' => $aziendaId]
         )->fetchAllAssociative();
@@ -303,7 +317,8 @@ class FPrenotazione extends FRepository
                     COUNT(*) AS prenotazioni,
                     COALESCE(SUM(p.imponibile_accesso), 0) AS ricavi
              FROM prenotazione p
-             JOIN circuito c ON c.id = p.circuito_id
+             JOIN sessione s ON s.id = p.sessione_id
+             JOIN circuito c ON c.id = s.circuito_id
              WHERE c.gestore_id = :g
                AND p.stato = 'confermata'
                AND p.data_inserimento >= :start" . $filtroCircuito . "
@@ -380,14 +395,16 @@ class FPrenotazione extends FRepository
         string $fine
     ): array {
         return FDataBase::executeQuery(
-            "SELECT id, inizio_sessione, fine_sessione, stato
-             FROM prenotazione
-             WHERE pilota_id = :p
-               AND circuito_id = :c
-               AND stato = 'confermata'
-               AND fine_sessione >= NOW()
-               AND inizio_sessione < :fine AND fine_sessione > :inizio
-             ORDER BY inizio_sessione ASC",
+            "SELECT p.id, p.sessione_id, s.inizio AS inizio_sessione,
+                    s.fine AS fine_sessione, p.stato
+             FROM prenotazione p
+             JOIN sessione s ON s.id = p.sessione_id
+             WHERE p.pilota_id = :p
+               AND s.circuito_id = :c
+               AND p.stato = 'confermata'
+               AND s.fine >= NOW()
+               AND s.inizio < :fine AND s.fine > :inizio
+             ORDER BY s.inizio ASC",
             [
                 ':p'      => $pilotaId,
                 ':c'      => $circuitoId,
@@ -398,13 +415,11 @@ class FPrenotazione extends FRepository
     }
 
     /**
-     * Assegna il box con meno piloti nella fascia della sessione; lancia
-     * RuntimeException se nessun box ha posti liberi.
+     * Assegna il box con meno piloti nella sessione; lancia RuntimeException
+     * se nessun box ha posti liberi.
      */
     public static function assegnaBox(
-        int $circuitoId,
-        string $inizio,
-        string $fine,
+        int $sessioneId,
         int $numeroBoxCircuito,
         int $postiPerBox
     ): int {
@@ -412,7 +427,7 @@ class FPrenotazione extends FRepository
             throw new RuntimeException('Il circuito non ha box configurati.');
         }
 
-        $counts = self::countPrenotazioniPerBox($circuitoId, $inizio, $fine);
+        $counts = self::countPrenotazioniPerBox($sessioneId);
 
         for ($box = 1; $box <= $numeroBoxCircuito; $box++) {
             $occupati = $counts[$box] ?? 0;
@@ -424,21 +439,17 @@ class FPrenotazione extends FRepository
         throw new RuntimeException('Nessun box disponibile per questa sessione.');
     }
 
-    /** Mappa numero_box => conteggio prenotazioni attive. */
-    private static function countPrenotazioniPerBox(
-        int $circuitoId,
-        string $inizio,
-        string $fine
-    ): array {
+    /** Mappa numero_box => conteggio prenotazioni attive della sessione. */
+    private static function countPrenotazioniPerBox(int $sessioneId): array
+    {
         $rows = FDataBase::executeQuery(
             "SELECT numero_box, COUNT(*) AS totale
              FROM prenotazione
-             WHERE circuito_id = :c
+             WHERE sessione_id = :s
                AND stato = 'confermata'
                AND numero_box IS NOT NULL
-               AND inizio_sessione < :fine AND fine_sessione > :inizio
              GROUP BY numero_box",
-            [':c' => $circuitoId, ':inizio' => $inizio, ':fine' => $fine]
+            [':s' => $sessioneId]
         )->fetchAllAssociative();
 
         $out = [];
@@ -449,8 +460,8 @@ class FPrenotazione extends FRepository
         return $out;
     }
 
-    /** Prenotazioni confermate sovrapposte all'intervallo di una sessione. */
-    public static function loadConfermateByIntervalloCircuito(int $circuitoId, string $inizio, string $fine): array
+    /** Prenotazioni confermate di una sessione. */
+    public static function loadConfermateBySessione(int $sessioneId): array
     {
         return FDataBase::executeQuery(
             "SELECT p.id, p.codice_identificativo, p.prezzo_importo, p.prezzo_valuta,
@@ -458,34 +469,33 @@ class FPrenotazione extends FRepository
                     u.nome AS pilota_nome, u.cognome AS pilota_cognome
              FROM prenotazione p
              JOIN account u ON u.id = p.pilota_id
-             WHERE p.circuito_id = :c
+             WHERE p.sessione_id = :s
                AND p.stato = 'confermata'
-               AND p.inizio_sessione < :fine AND p.fine_sessione > :inizio
              ORDER BY u.cognome ASC, u.nome ASC",
-            [':c' => $circuitoId, ':inizio' => $inizio, ':fine' => $fine]
+            [':s' => $sessioneId]
         )->fetchAllAssociative();
     }
 
     /**
-     * Tutte le prenotazioni (di qualunque stato) sovrapposte alla sessione, con
-     * pilota ed eventuale veicolo. Per la consultazione del gestore: confermate
+     * Tutte le prenotazioni (di qualunque stato) di una sessione, con pilota
+     * ed eventuale veicolo. Per la consultazione del gestore: confermate
      * prima, poi per box e pilota.
      */
-    public static function loadBySessioneCircuito(int $circuitoId, string $inizio, string $fine): array
+    public static function loadBySessione(int $sessioneId): array
     {
         return FDataBase::executeQuery(
             "SELECT p.id, p.pilota_id, p.codice_identificativo, p.imponibile_accesso, p.prezzo_valuta,
                     p.numero_box, p.targa_veicolo, p.veicolo_noleggio_id, p.assicurazione,
-                    p.stato, p.inizio_sessione, p.fine_sessione, p.data_inserimento,
+                    p.stato, s.inizio AS inizio_sessione, s.fine AS fine_sessione, p.data_inserimento,
                     u.nome AS pilota_nome, u.cognome AS pilota_cognome, u.email AS pilota_email,
                     v.marca AS v_marca, v.modello AS v_modello, v.targa AS v_targa
              FROM prenotazione p
+             JOIN sessione s ON s.id = p.sessione_id
              JOIN account u ON u.id = p.pilota_id
              LEFT JOIN veicolo_noleggio v ON v.id = p.veicolo_noleggio_id
-             WHERE p.circuito_id = :c
-               AND p.inizio_sessione < :fine AND p.fine_sessione > :inizio
+             WHERE p.sessione_id = :s
              ORDER BY (p.stato = 'confermata') DESC, p.numero_box ASC, u.cognome ASC, u.nome ASC",
-            [':c' => $circuitoId, ':inizio' => $inizio, ':fine' => $fine]
+            [':s' => $sessioneId]
         )->fetchAllAssociative();
     }
 
@@ -588,7 +598,8 @@ class FPrenotazione extends FRepository
         return (float) FDataBase::executeQuery(
             "SELECT COALESCE(SUM(p.imponibile_accesso), 0)
              FROM prenotazione p
-             JOIN circuito c ON c.id = p.circuito_id
+             JOIN sessione s ON s.id = p.sessione_id
+             JOIN circuito c ON c.id = s.circuito_id
              WHERE c.gestore_id = :u AND p.stato = 'confermata'
                AND p.data_inserimento >= DATE_FORMAT(NOW(), '%Y-%m-01 00:00:00')",
             [':u' => $gestoreId]
@@ -620,8 +631,9 @@ class FPrenotazione extends FRepository
     {
         return (int) FDataBase::executeQuery(
             "SELECT COUNT(*) FROM prenotazione p
-             JOIN circuito c ON c.id = p.circuito_id
-             WHERE c.gestore_id = :g AND p.fine_sessione >= NOW()
+             JOIN sessione s ON s.id = p.sessione_id
+             JOIN circuito c ON c.id = s.circuito_id
+             WHERE c.gestore_id = :g AND s.fine >= NOW()
                AND p.stato = 'confermata'",
             [':g' => $gestoreId]
         )->fetchOne();
@@ -630,11 +642,12 @@ class FPrenotazione extends FRepository
     public static function countStoricheByPilotaCircuito(int $pilotaId, int $circuitoId): int
     {
         return (int) FDataBase::executeQuery(
-            "SELECT COUNT(*) FROM prenotazione
-             WHERE pilota_id = :p
-               AND circuito_id = :c
-               AND stato <> 'cancellata'
-               AND fine_sessione < NOW()",
+            "SELECT COUNT(*) FROM prenotazione p
+             JOIN sessione s ON s.id = p.sessione_id
+             WHERE p.pilota_id = :p
+               AND s.circuito_id = :c
+               AND p.stato <> 'cancellata'
+               AND s.fine < NOW()",
             [':p' => $pilotaId, ':c' => $circuitoId]
         )->fetchOne();
     }
