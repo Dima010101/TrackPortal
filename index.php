@@ -18,7 +18,7 @@ if (!is_file($trackPortalComposer)) {
 require_once $trackPortalComposer;
 
 // configurazione d'ambiente
-$trackPortalConfig = "C:/xampp/trackportal-config/config.php";
+$trackPortalConfig = "C:/xampp/Trackportal-config/config.php";
 if (!is_file($trackPortalConfig)) {
     http_response_code(500);
     die(
