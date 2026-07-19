@@ -2,6 +2,10 @@ vendor/*
 !vendor/.gitkeep
 var/*
 !var/.gitkeep
+uploads/circuiti/*
+!uploads/circuiti/.gitkeep
+uploads/piloti/*
+!uploads/piloti/.gitkeep
 composer.phar
 .env
 .env.local

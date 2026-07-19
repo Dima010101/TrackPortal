@@ -19,7 +19,9 @@ class FPersistentManager
     public const SANZIONE_PILOTA_CLASS = \FSanzionePilota::class;
     public const SANZIONE_PILOTA_NOLEGGIO_CLASS = \FSanzionePilotaNoleggio::class;
     public const DOCUMENTO_PILOTA_TIPI = \FDocumentoPilota::TIPI;
-
+    public const AFFILIAZIONE_STATO_APPROVATA = \FAffiliazione::STATO_APPROVATA;
+    public const AFFILIAZIONE_STATO_IN_ATTESA = \FAffiliazione::STATO_IN_ATTESA;
+    public const AFFILIAZIONE_STATO_RIFIUTATA = \FAffiliazione::STATO_RIFIUTATA;
     
 
     /**METODI PROPRI DEL MANAGER */
@@ -177,6 +179,31 @@ class FPersistentManager
         }
 
         throw new InvalidArgumentException("Campo non mappato su {$entityClass}: {$dbColumn}");
+    }
+
+    /**aggiorna il valore di un campo per un record specifico */
+    public static function updateField(
+        string $entityClass,
+        string $field,
+        mixed $newvalue,
+        string $pk,
+        mixed $val
+    ): bool {
+        $field = sql_column_identifier($field);
+        $pk    = sql_column_identifier($pk);
+        $prop  = self::resolveFieldName($entityClass, $field);
+        $pkProp = self::resolveFieldName($entityClass, $pk);
+
+        self::em()->createQueryBuilder()
+            ->update($entityClass, 'e')
+            ->set("e.{$prop}", ':v')
+            ->where("e.{$pkProp} = :pk")
+            ->setParameter('v', $newvalue)
+            ->setParameter('pk', $val)
+            ->getQuery()
+            ->execute();
+
+        return true;
     }
 
 
