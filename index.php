@@ -18,14 +18,10 @@ if (!is_file($trackPortalComposer)) {
 require_once $trackPortalComposer;
 
 // configurazione d'ambiente
-$trackPortalConfig = "C:/xampp/Trackportal-config/config.php";
+$trackPortalConfig = __DIR__ . '/trackportal-config/config.php';
 if (!is_file($trackPortalConfig)) {
     http_response_code(500);
-    die(
-        '<h1>Configurazione mancante</h1><p>Copia <code>config.example.php</code> in <code>'
-        . htmlspecialchars($trackPortalConfig, ENT_QUOTES | ENT_HTML5, 'UTF-8')
-        . '</code> e imposta le credenziali.</p>'
-    );
+    die("Configurazione mancante. Verifica il file:\n" . $trackPortalConfig . "\n");
 }
 require_once $trackPortalConfig;
 
