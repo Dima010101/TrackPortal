@@ -21,8 +21,8 @@ if (!is_file($autoload)) {
 }
 require_once $autoload;
 
-// Configurazione condivisa con l'app: vive fuori dalla document root (vedi index.php).
-$trackPortalConfig = __DIR__ . '/trackportal-config/config.php';
+// configurazione d'ambiente
+$trackPortalConfig = TRACKPORTAL_BASE_DIR . '/config/config.php';
 if (!is_file($trackPortalConfig)) {
     http_response_code(500);
     die("Configurazione mancante. Verifica il file:\n" . $trackPortalConfig . "\n");

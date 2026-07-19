@@ -18,7 +18,7 @@ if (!is_file($trackPortalComposer)) {
 require_once $trackPortalComposer;
 
 // configurazione d'ambiente
-$trackPortalConfig = __DIR__ . '/trackportal-config/config.php';
+$trackPortalConfig = TRACKPORTAL_BASE_DIR . '/config/config.php';
 if (!is_file($trackPortalConfig)) {
     http_response_code(500);
     die("Configurazione mancante. Verifica il file:\n" . $trackPortalConfig . "\n");

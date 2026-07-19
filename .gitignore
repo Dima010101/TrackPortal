@@ -1,7 +1,9 @@
-vendor/*
-!vendor/.gitkeep
+config/*
+!config/.gitkeep
 var/*
 !var/.gitkeep
+vendor/*
+!vendor/.gitkeep
 uploads/circuiti/*
 !uploads/circuiti/.gitkeep
 uploads/piloti/*
