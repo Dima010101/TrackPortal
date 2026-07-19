@@ -1,0 +1,52 @@
+# TrackPortal - configurazione Apache (front controller)
+
+DirectoryIndex index.php index.html
+
+# Pagine di errore personalizzate (rispondono via FrontController -> CError).
+# Apache devia gli errori al front-controller usando le rotte /error/*.
+ErrorDocument 404 /TrackPortal/error/404
+ErrorDocument 403 /TrackPortal/error/403
+
+RewriteEngine On
+RewriteBase /TrackPortal/
+
+# Blocca l'esecuzione di file .php caricati nella cartella uploads
+RewriteRule ^uploads/.*\.(php|phtml|phps)$ - [F,L]
+
+# Documenti riservati dei piloti. Sono serviti solo dal front controller
+# /account/{id}/{tipo} previa verifica dei permessi (admin o proprietario).
+RewriteRule ^uploads/piloti/ - [F,L]
+
+# Tutte le richieste verso risorse non-statiche e non esistenti vengono
+# inoltrate a index.php, che instanzia CFrontController e fa il dispatch.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+
+# Cache statica leggera
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css                 "access plus 7 days"
+    ExpiresByType application/javascript   "access plus 7 days"
+    ExpiresByType image/png                "access plus 30 days"
+    ExpiresByType image/jpeg               "access plus 30 days"
+    ExpiresByType image/svg+xml            "access plus 30 days"
+</IfModule>
+
+# Compressione GZIP
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json
+</IfModule>
+
+# Header di sicurezza
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options        "SAMEORIGIN"
+    Header set Referrer-Policy        "strict-origin-when-cross-origin"
+    Header set Permissions-Policy     "geolocation=(), microphone=(), camera=()"
+
+    # CSP: solo risorse self, niente terze parti
+    Header set Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+
+    Header unset X-Powered-By
+</IfModule>
