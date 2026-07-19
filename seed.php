@@ -22,10 +22,10 @@ if (!is_file($autoload)) {
 require_once $autoload;
 
 // Configurazione condivisa con l'app: vive fuori dalla document root (vedi index.php).
-$trackPortalConfig = "C:/xampp/trackportal-config/config.php";
+$trackPortalConfig = __DIR__ . '/trackportal-config/config.php';
 if (!is_file($trackPortalConfig)) {
     http_response_code(500);
-    die("Configurazione mancante. Copia config.example.php in:\n" . $trackPortalConfig . "\n");
+    die("Configurazione mancante. Verifica il file:\n" . $trackPortalConfig . "\n");
 }
 require_once $trackPortalConfig;
 
@@ -37,9 +37,7 @@ if (PHP_SAPI !== 'cli') {
     header('Content-Type: text/plain; charset=utf-8');
 }
 
-// =====================================================================
 // FASE 1 - DATI BASE (solo se il database e' vuoto)
-// =====================================================================
 $accountEsistenti = (int) FDataBase::executeQuery('SELECT COUNT(*) FROM account')->fetchOne();
 
 if ($accountEsistenti > 0) {
