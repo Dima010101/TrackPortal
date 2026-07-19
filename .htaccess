@@ -19,6 +19,8 @@ RewriteRule ^uploads/piloti/ - [F,L]
 
 # Tutte le richieste verso risorse non-statiche e non esistenti vengono
 # inoltrate a index.php, che instanzia CFrontController e fa il dispatch.
+RewriteCond ^var/ - [F,L]
+RewriteRule ^(trackportal\.sql|composer\.(json|lock))$ - [F,L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]
