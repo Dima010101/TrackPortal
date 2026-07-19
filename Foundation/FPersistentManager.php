@@ -933,6 +933,11 @@ class FPersistentManager
         \FNotifiche::notificaAdminAffiliazione($richiedente, $tipoLabel);
     }
 
+    public static function circuitoCountAll(): int
+    {
+        return \FCircuito::countAll();
+    }
+
 
     /** LA PARTE DI SOSPENSIONE NON RIMANDA AD UNA REPOSITORY PERCHE ESSA DIPENDE 
      *  DA CHI SANZIONA QUINDI RIMANE TUTTO QUA E LA REPO è PASSATA OGNI VOLTA */
