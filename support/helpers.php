@@ -326,6 +326,16 @@ function provincia_normalizza(string $prov): string
     return strtoupper(trim($prov));
 }
 
+/** Valida un nome di colonna usato come identificatore SQL */
+function sql_column_identifier(string $column): string
+{
+    if ($column === '' || !preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $column)) {
+        throw new InvalidArgumentException('Identificatore colonna SQL non consentito.');
+    }
+
+    return $column;
+}
+
 
 
 /**METODI DI HELPERS USATI PER PRESENTATION E TEMPLATES */

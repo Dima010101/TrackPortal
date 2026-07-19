@@ -144,6 +144,41 @@ class FPersistentManager
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
+    /**  verifica se esiste almeno un record con un determinato valore in una determinata colonna */
+    public static function existsByField(string $entityClass, string $field, mixed $val): bool
+    {
+        $field = sql_column_identifier($field);
+        $prop  = self::resolveFieldName($entityClass, $field);
+        $meta  = self::em()->getClassMetadata($entityClass);
+        $id    = $meta->getSingleIdentifierFieldName();
+
+        $count = (int) self::em()->createQueryBuilder()
+            ->select("COUNT(e.{$id})")
+            ->from($entityClass, 'e')
+            ->where("e.{$prop} = :v")
+            ->setParameter('v', $val)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $count > 0;
+    }
+
+    /** restituisce il nome del campo associato a una colonna del database */
+    private static function resolveFieldName(string $entityClass, string $dbColumn): string
+    {
+        $meta = self::em()->getClassMetadata($entityClass);
+        if ($meta->hasField($dbColumn)) {
+            return $dbColumn;
+        }
+        foreach ($meta->getFieldNames() as $fieldName) {
+            if ($meta->getColumnName($fieldName) === $dbColumn) {
+                return $fieldName;
+            }
+        }
+
+        throw new InvalidArgumentException("Campo non mappato su {$entityClass}: {$dbColumn}");
+    }
+
 
     /**METODI DI REDIRECT ALLE SINGOLE REPOSITORY */
     public static function circuitoLoadWithVeicoliCount(?int $limit = NULL): array
@@ -825,6 +860,52 @@ class FPersistentManager
     {
         return \FNotifiche::documentiPilotaRespinti($pilota);
     }
+
+    public static function accountFactoryDaId(int $id): ?\EAccount
+    {
+        return \FAccount::loadEntityById($id);
+    }
+
+    public static function notificheCodice2FA(array $account, string $code): bool
+    {
+        return \FNotifiche::codice2FA($account, $code);
+    }
+
+    public static function accountMarkEmailVerificata(int $id): void
+    {
+        \FAccount::markEmailVerificata($id);
+    }
+
+    public static function accountSetTokenVerifica(int $id, ?string $token): void
+    {
+        \FAccount::setTokenVerifica($id, $token);
+    }
+
+    public static function accountLoadByTokenVerifica(string $token): ?array
+    {
+        return \FAccount::loadByTokenVerifica($token);
+    }
+
+    public static function notificheConfermaRegistrazione(array $account, string $token): bool
+    {
+        return \FNotifiche::confermaRegistrazione($account, $token);
+    }
+
+    public static function accountRigaDopoVerificaPassword(string $email, string $password): ?array
+    {
+        return \FAccount::rigaDopoVerificaPassword($email, $password);
+    }
+
+    public static function accountFactoryDaRigaUtente(array $row): ?\EAccount
+    {
+        return \FAccount::entityDaRiga($row);
+    }
+
+    public static function notificheNotificaAdminAffiliazione(array $richiedente, string $tipoLabel): void
+    {
+        \FNotifiche::notificaAdminAffiliazione($richiedente, $tipoLabel);
+    }
+
 
     /** LA PARTE DI SOSPENSIONE NON RIMANDA AD UNA REPOSITORY PERCHE ESSA DIPENDE 
      *  DA CHI SANZIONA QUINDI RIMANE TUTTO QUA E LA REPO è PASSATA OGNI VOLTA */
