@@ -1,6 +1,6 @@
 <?php
 
-/** Repository prenotazioni. */
+// repository prenotazioni
 class FPrenotazione extends FRepository
 {
     protected static function entityClass(): string
@@ -68,7 +68,7 @@ class FPrenotazione extends FRepository
         $args  = [':g' => $gestoreId, ':g2' => $gestoreId];
 
         if ($q !== '') {
-            // CONCAT: trova anche la ricerca «Nome Cognome» completa.
+            // CONCAT trova anche la ricerca su nome e cognome completi
             $where[] = "(c.nome_circuito LIKE :q1 OR p.codice_identificativo LIKE :q2
                          OR u.nome LIKE :q3 OR u.cognome LIKE :q4
                          OR CONCAT(u.nome, ' ', u.cognome) LIKE :q5)";
@@ -79,8 +79,7 @@ class FPrenotazione extends FRepository
             $args[':q5'] = "%{$q}%";
         }
 
-        // Fattura emessa DA QUESTO gestore (0 o 1 per riga), scaricabile dallo
-        // storico; il gestore vede solo la sua quota (imponibile_accesso).
+        // fattura emessa da questo gestore, che vede solo la sua quota di accesso
         return FDataBase::executeQuery(
             "SELECT p.id, p.codice_identificativo, p.imponibile_accesso, p.prezzo_valuta,
                     s.inizio AS inizio_sessione, s.fine AS fine_sessione, p.stato,
@@ -107,7 +106,7 @@ class FPrenotazione extends FRepository
         $args  = [':a' => $aziendaId, ':a2' => $aziendaId];
 
         if ($q !== '') {
-            // CONCAT: trova anche la ricerca «Nome Cognome» completa.
+            // CONCAT trova anche la ricerca su nome e cognome completi
             $where[] = "(p.codice_identificativo LIKE :q1 OR v.marca LIKE :q2
                          OR v.modello LIKE :q3 OR v.targa LIKE :q4
                          OR u.nome LIKE :q5 OR u.cognome LIKE :q6
@@ -121,8 +120,7 @@ class FPrenotazione extends FRepository
             $args[':q7'] = "%{$q}%";
         }
 
-        // Fattura emessa DA QUESTA azienda (0 o 1 per riga), scaricabile dallo
-        // storico; l'azienda vede solo la sua quota (imponibile_noleggio).
+        // fattura emessa da questa azienda, che vede solo la sua quota di noleggio
         return FDataBase::executeQuery(
             "SELECT p.id, p.codice_identificativo, p.imponibile_noleggio, p.prezzo_valuta,
                     s.inizio AS inizio_sessione, s.fine AS fine_sessione, p.stato,
@@ -182,7 +180,7 @@ class FPrenotazione extends FRepository
         return $r ?: null;
     }
 
-    /** $filtro: 'attive' oppure 'storico'. */
+    // $filtro vale 'attive' oppure 'storico'
     public static function loadByPilotaFiltro(int $pilotaId, string $filtro, string $q = ''): array
     {
         $where = ['p.pilota_id = :u'];
@@ -226,7 +224,7 @@ class FPrenotazione extends FRepository
         )->fetchAllAssociative();
     }
 
-    /** Prossimi noleggi (prenotazioni con veicolo) di un'azienda. */
+    // prossimi noleggi di un'azienda, prenotazioni con veicolo
     public static function loadProssimiNoleggiByAzienda(int $aziendaId, int $limit = 6): array
     {
         return FDataBase::executeQuery(
@@ -246,10 +244,9 @@ class FPrenotazione extends FRepository
         )->fetchAllAssociative();
     }
 
-    // --- Andamento mensile (serie per i grafici). Le query danno solo i mesi
-    // con attività; i mesi a zero li aggiunge mesiSkeleton(). ---
+    // andamento mensile per i grafici, i mesi a zero li aggiunge mesiSkeleton
 
-    /** Inizio del mese più vecchio della finestra di $mesi mesi, in DATETIME SQL. */
+    // inizio del mese più vecchio della finestra di $mesi mesi, in DATETIME SQL
     private static function inizioFinestraMesi(int $mesi): string
     {
         $mesi = max(1, $mesi);
@@ -258,11 +255,7 @@ class FPrenotazione extends FRepository
             ->format('Y-m-d H:i:s');
     }
 
-    /**
-     * Mappa ordinata 'YYYY-MM' => riga a zero per gli ultimi $mesi mesi.
-     *
-     * @return array<string, array{ym:string, prenotazioni:int, ricavi:float}>
-     */
+    // mappa ordinata 'YYYY-MM' con riga a zero per gli ultimi $mesi mesi
     private static function mesiSkeleton(int $mesi): array
     {
         $mesi = max(1, $mesi);
@@ -279,12 +272,7 @@ class FPrenotazione extends FRepository
         return $out;
     }
 
-    /**
-     * Riversa le righe aggregate nello scheletro mensile.
-     *
-     * @param array<string, array{ym:string, prenotazioni:int, ricavi:float}> $skeleton
-     * @return list<array{ym:string, prenotazioni:int, ricavi:float}>
-     */
+    // riversa le righe aggregate nello scheletro mensile
     private static function fondiMesi(array $skeleton, array $rows): array
     {
         foreach ($rows as $row) {
@@ -298,11 +286,7 @@ class FPrenotazione extends FRepository
         return array_values($skeleton);
     }
 
-    /**
-     * Prenotazioni confermate e ricavi, per mese, sui circuiti di un gestore.
-     *
-     * @return list<array{ym:string, prenotazioni:int, ricavi:float}>
-     */
+    // prenotazioni confermate e ricavi per mese sui circuiti di un gestore
     public static function andamentoMensileGestore(int $gestoreId, int $mesi = 6, ?int $circuitoId = null): array
     {
         $args = [':g' => $gestoreId, ':start' => self::inizioFinestraMesi($mesi)];
@@ -330,11 +314,7 @@ class FPrenotazione extends FRepository
         return self::fondiMesi(self::mesiSkeleton($mesi), $rows);
     }
 
-    /**
-     * Noleggi confermati e ricavi, per mese, di un'azienda.
-     *
-     * @return list<array{ym:string, prenotazioni:int, ricavi:float}>
-     */
+    // noleggi confermati e ricavi per mese di un'azienda
     public static function andamentoMensileAzienda(int $aziendaId, int $mesi = 6): array
     {
         $rows = FDataBase::executeQuery(
@@ -354,13 +334,7 @@ class FPrenotazione extends FRepository
         return self::fondiMesi(self::mesiSkeleton($mesi), $rows);
     }
 
-    /**
-     * Assicurazioni stipulate per mese su tutta la piattaforma. Qui solo il
-     * conteggio: ricavi resta a 0, lo calcola il chiamante col prezzo
-     * dell'assicurazione.
-     *
-     * @return list<array{ym:string, prenotazioni:int, ricavi:float}>
-     */
+    // assicurazioni stipulate per mese, solo il conteggio, i ricavi li calcola il chiamante
     public static function andamentoMensileAssicurazioni(int $mesi = 6): array
     {
         $rows = FDataBase::executeQuery(
@@ -379,7 +353,7 @@ class FPrenotazione extends FRepository
         return self::fondiMesi(self::mesiSkeleton($mesi), $rows);
     }
 
-    /** Ricavi totali delle prenotazioni confermate (tutta la piattaforma). */
+    // ricavi totali delle prenotazioni confermate su tutta la piattaforma
     public static function sumRicaviConfermate(): float
     {
         return (float) FDataBase::executeQuery(
@@ -414,10 +388,7 @@ class FPrenotazione extends FRepository
         )->fetchAllAssociative();
     }
 
-    /**
-     * Assegna il box con meno piloti nella sessione; lancia RuntimeException
-     * se nessun box ha posti liberi.
-     */
+    // assegna il box con meno piloti nella sessione, lancia eccezione se sono tutti pieni
     public static function assegnaBox(
         int $sessioneId,
         int $numeroBoxCircuito,
@@ -439,7 +410,7 @@ class FPrenotazione extends FRepository
         throw new RuntimeException('Nessun box disponibile per questa sessione.');
     }
 
-    /** Mappa numero_box => conteggio prenotazioni attive della sessione. */
+    // mappa numero_box con il conteggio prenotazioni attive della sessione
     private static function countPrenotazioniPerBox(int $sessioneId): array
     {
         $rows = FDataBase::executeQuery(
@@ -460,7 +431,7 @@ class FPrenotazione extends FRepository
         return $out;
     }
 
-    /** Prenotazioni confermate di una sessione. */
+    // prenotazioni confermate di una sessione
     public static function loadConfermateBySessione(int $sessioneId): array
     {
         return FDataBase::executeQuery(
@@ -476,11 +447,7 @@ class FPrenotazione extends FRepository
         )->fetchAllAssociative();
     }
 
-    /**
-     * Tutte le prenotazioni (di qualunque stato) di una sessione, con pilota
-     * ed eventuale veicolo. Per la consultazione del gestore: confermate
-     * prima, poi per box e pilota.
-     */
+    // tutte le prenotazioni di una sessione con pilota ed eventuale veicolo
     public static function loadBySessione(int $sessioneId): array
     {
         return FDataBase::executeQuery(
@@ -499,7 +466,7 @@ class FPrenotazione extends FRepository
         )->fetchAllAssociative();
     }
 
-    /** $dati: chiavi targa_veicolo e assicurazione. Ritorna il dettaglio aggiornato. */
+    // $dati ha chiavi targa_veicolo e assicurazione, ritorna il dettaglio aggiornato
     public static function aggiornaPrenotazione(int $id, int $pilotaId, array $dati): array
     {
         $dettaglio = self::loadDettaglio($id, $pilotaId);
@@ -578,8 +545,7 @@ class FPrenotazione extends FRepository
         $pren->setRimborsoPrevisto($rimborso);
         FPersistentManager::flush();
 
-        // Note di credito proporzionali al rimborso, best-effort: un errore
-        // non invalida la cancellazione già registrata.
+        // note di credito proporzionali al rimborso, best effort
         try {
             FFatturazione::emettiNoteCreditoPerPrenotazione(
                 $id,
@@ -592,7 +558,7 @@ class FPrenotazione extends FRepository
         }
     }
 
-    /** Quota accesso pista incassata dal gestore nel mese corrente. */
+    // quota accesso pista incassata dal gestore nel mese corrente
     public static function sumGuadagnoMeseGestore(int $gestoreId): float
     {
         return (float) FDataBase::executeQuery(
