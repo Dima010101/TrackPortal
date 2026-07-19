@@ -791,6 +791,41 @@ class FPersistentManager
         \FPilota::updateProfilo($uid, $categoria, $licenza, $scadenzaLicenza, $indirizzi);
     }
 
+    public static function affiliazioneLoadPendingRichieste(): array
+    {
+        return \FAffiliazione::loadPendingRichieste();
+    }
+
+    public static function affiliazioneLoadStoricoRichieste(): array
+    {
+        return \FAffiliazione::loadStoricoRichieste();
+    }
+
+    public static function affiliazioneLoadRichiestaById(int $id): ?array
+    {
+        return \FAffiliazione::loadRichiestaById($id);
+    }
+
+    public static function affiliazioneApprovaSeInAttesa(int $id, string $tipo): array
+    {
+        return \FAffiliazione::approvaSeInAttesa($id, $tipo);
+    }
+
+    public static function affiliazioneRespingiSeInAttesa(int $id, string $tipo): array
+    {
+        return \FAffiliazione::respingiSeInAttesa($id, $tipo);
+    }
+
+    public static function notificheDocumentiPilotaApprovati(array $pilota): bool
+    {
+        return \FNotifiche::documentiPilotaApprovati($pilota);
+    }
+
+    public static function notificheDocumentiPilotaRespinti(array $pilota): bool
+    {
+        return \FNotifiche::documentiPilotaRespinti($pilota);
+    }
+
     /** LA PARTE DI SOSPENSIONE NON RIMANDA AD UNA REPOSITORY PERCHE ESSA DIPENDE 
      *  DA CHI SANZIONA QUINDI RIMANE TUTTO QUA E LA REPO è PASSATA OGNI VOLTA */
 
