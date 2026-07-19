@@ -320,7 +320,7 @@ class FFatturazione
         $r = FDataBase::executeQuery(
             "SELECT p.id, p.pilota_id, p.codice_identificativo, p.prezzo_valuta,
                     p.imponibile_accesso, p.imponibile_noleggio, p.imponibile_assicurazione,
-                    p.inizio_sessione, p.fine_sessione, p.assicurazione, p.veicolo_noleggio_id,
+                    s.inizio AS inizio_sessione, s.fine AS fine_sessione, p.assicurazione, p.veicolo_noleggio_id,
                     c.nome_circuito, c.gestore_id,
                     gc.nome_societa AS gc_societa, gc.partita_iva AS gc_piva, gc.codice_fiscale AS gc_cf,
                     gc.indirizzo AS gc_ind, gc.cap AS gc_cap, gc.comune AS gc_comune, gc.provincia AS gc_prov,
@@ -330,7 +330,8 @@ class FFatturazione
                     pil.fatt_indirizzo AS pil_fatt_ind, pil.fatt_cap AS pil_fatt_cap,
                     pil.fatt_comune AS pil_fatt_comune, pil.fatt_provincia AS pil_fatt_prov
              FROM prenotazione p
-             JOIN circuito c ON c.id = p.circuito_id
+             JOIN sessione s ON s.id = p.sessione_id
+             JOIN circuito c ON c.id = s.circuito_id
              JOIN gestore_circuiti gc ON gc.id = c.gestore_id
              JOIN account up ON up.id = p.pilota_id
              JOIN pilota pil ON pil.id = p.pilota_id

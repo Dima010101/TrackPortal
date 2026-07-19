@@ -27,10 +27,10 @@ class FVeicoloNoleggio extends FRepository
     }
 
     /**
-     * Veicoli disponibili su un circuito. Con $inizio/$fine esclude quelli già
-     * prenotati (confermata) in un intervallo sovrapposto.
+     * Veicoli disponibili su un circuito. Con $sessioneId esclude quelli già
+     * prenotati (confermata) per quella sessione.
      */
-    public static function loadDisponibiliByCircuito(int $circuitoId, ?string $inizio = null, ?string $fine = null): array
+    public static function loadDisponibiliByCircuito(int $circuitoId, ?int $sessioneId = null): array
     {
         $sql = "SELECT v.*, a.nome_societa
                 FROM veicolo_noleggio v
@@ -38,31 +38,28 @@ class FVeicoloNoleggio extends FRepository
                 WHERE v.circuito_id = :c AND v.disponibile = 1";
         $args = [':c' => $circuitoId];
 
-        if ($inizio !== null && $fine !== null && $inizio !== '' && $fine !== '') {
+        if ($sessioneId !== null && $sessioneId > 0) {
             $sql .= " AND NOT EXISTS (
                           SELECT 1 FROM prenotazione p
                           WHERE p.veicolo_noleggio_id = v.id
                             AND p.stato = 'confermata'
-                            AND p.inizio_sessione < :fine
-                            AND p.fine_sessione   > :inizio
+                            AND p.sessione_id = :s
                       )";
-            $args[':inizio'] = $inizio;
-            $args[':fine']   = $fine;
+            $args[':s'] = $sessioneId;
         }
 
         return FDataBase::executeQuery($sql, $args)->fetchAllAssociative();
     }
 
-    /** True se il veicolo ha una prenotazione confermata sovrapposta alla fascia. */
-    public static function prenotatoInIntervallo(int $veicoloId, string $inizio, string $fine): bool
+    /** True se il veicolo ha una prenotazione confermata per la sessione. */
+    public static function prenotatoPerSessione(int $veicoloId, int $sessioneId): bool
     {
         $n = FDataBase::executeQuery(
             "SELECT COUNT(*) FROM prenotazione
              WHERE veicolo_noleggio_id = :v
                AND stato = 'confermata'
-               AND inizio_sessione < :fine
-               AND fine_sessione   > :inizio",
-            [':v' => $veicoloId, ':fine' => $fine, ':inizio' => $inizio]
+               AND sessione_id = :s",
+            [':v' => $veicoloId, ':s' => $sessioneId]
         )->fetchOne();
 
         return (int) $n > 0;

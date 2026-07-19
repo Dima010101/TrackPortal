@@ -84,7 +84,8 @@ class FCircuito extends FRepository
     {
         $sql = self::sqlSelectWithCounts() . ",
                        (SELECT COUNT(*) FROM prenotazione p
-                        WHERE p.circuito_id = c.id
+                        JOIN sessione s ON s.id = p.sessione_id
+                        WHERE s.circuito_id = c.id
                           AND p.stato = 'confermata'
                           AND p.data_inserimento >= DATE_FORMAT(NOW(), '%Y-%m-01 00:00:00')
                        ) AS prenotazioni_mese

@@ -80,19 +80,20 @@ class FSanzionePilotaNoleggio extends FSanzionePilota
     {
         $sql = "SELECT p.id, p.prezzo_importo
                 FROM prenotazione p
+                JOIN sessione s ON s.id = p.sessione_id
                 JOIN veicolo_noleggio v ON v.id = p.veicolo_noleggio_id
                 WHERE v.azienda_id = :a
                   AND p.pilota_id = :p
                   AND p.stato = 'confermata'
-                  AND p.fine_sessione >= NOW()";
+                  AND s.fine >= NOW()";
         $args = [':a' => $gestoreId, ':p' => $pilotaId];
 
         if ($finoA !== null) {
-            $sql .= ' AND p.inizio_sessione <= :finoA';
+            $sql .= ' AND s.inizio <= :finoA';
             $args[':finoA'] = $finoA;
         }
 
-        $sql .= ' ORDER BY p.inizio_sessione ASC';
+        $sql .= ' ORDER BY s.inizio ASC';
 
         return FDataBase::executeQuery($sql, $args)->fetchAllAssociative();
     }

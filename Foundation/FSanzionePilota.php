@@ -92,7 +92,8 @@ class FSanzionePilota extends FRepository
         return FDataBase::executeQuery(
             "SELECT DISTINCT u.id, u.nome, u.cognome, u.email
              FROM prenotazione p
-             JOIN circuito c ON c.id = p.circuito_id
+             JOIN sessione se ON se.id = p.sessione_id
+             JOIN circuito c ON c.id = se.circuito_id
              JOIN account u ON u.id = p.pilota_id
              WHERE c.gestore_id = :g
                AND NOT EXISTS (
@@ -116,7 +117,8 @@ class FSanzionePilota extends FRepository
         $haPrenotato = (int) FDataBase::executeQuery(
             "SELECT COUNT(*)
              FROM prenotazione p
-             JOIN circuito c ON c.id = p.circuito_id
+             JOIN sessione s ON s.id = p.sessione_id
+             JOIN circuito c ON c.id = s.circuito_id
              WHERE c.gestore_id = :g AND p.pilota_id = :p",
             [':g' => $gestoreId, ':p' => $pilotaId]
         )->fetchOne();
@@ -339,19 +341,20 @@ class FSanzionePilota extends FRepository
     {
         $sql = "SELECT p.id, p.prezzo_importo
                 FROM prenotazione p
-                JOIN circuito c ON c.id = p.circuito_id
+                JOIN sessione s ON s.id = p.sessione_id
+                JOIN circuito c ON c.id = s.circuito_id
                 WHERE c.gestore_id = :g
                   AND p.pilota_id = :p
                   AND p.stato = 'confermata'
-                  AND p.fine_sessione >= NOW()";
+                  AND s.fine >= NOW()";
         $args = [':g' => $gestoreId, ':p' => $pilotaId];
 
         if ($finoA !== null) {
-            $sql .= ' AND p.inizio_sessione <= :finoA';
+            $sql .= ' AND s.inizio <= :finoA';
             $args[':finoA'] = $finoA;
         }
 
-        $sql .= ' ORDER BY p.inizio_sessione ASC';
+        $sql .= ' ORDER BY s.inizio ASC';
 
         return FDataBase::executeQuery($sql, $args)->fetchAllAssociative();
     }

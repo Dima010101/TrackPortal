@@ -3,7 +3,8 @@
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Prenotazione pilota su un circuito.
+ * Prenotazione di un pilota su una sessione di pista (circuito e orari
+ * vivono sulla sessione referenziata da sessione_id).
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'prenotazione')]
@@ -20,20 +21,14 @@ class EPrenotazione
     #[ORM\Column(name: 'pilota_id', type: 'integer')]
     protected int $pilotaId;
 
-    #[ORM\Column(name: 'circuito_id', type: 'integer')]
-    protected int $circuitoId;
+    #[ORM\Column(name: 'sessione_id', type: 'integer')]
+    protected int $sessioneId;
 
     #[ORM\Column(name: 'veicolo_noleggio_id', type: 'integer', nullable: true)]
     protected ?int $veicoloNoleggioId = null;
 
     #[ORM\Column(name: 'targa_veicolo', type: 'string', length: 20, nullable: true)]
     protected ?string $targaVeicolo = null;
-
-    #[ORM\Column(name: 'inizio_sessione', type: 'string', length: 19)]
-    protected string $inizioSessione;
-
-    #[ORM\Column(name: 'fine_sessione', type: 'string', length: 19)]
-    protected string $fineSessione;
 
     #[ORM\Column(name: 'numero_box', type: 'integer', nullable: true)]
     protected ?int $numeroBox = null;
@@ -79,9 +74,7 @@ class EPrenotazione
 
     public function __construct(
         int $pilotaId = 0,
-        int $circuitoId = 0,
-        string $inizioSessione = '',
-        string $fineSessione = '',
+        int $sessioneId = 0,
         ?int $numeroBox = null,
         ?int $veicoloNoleggioId = null,
         ?string $targaVeicolo = null,
@@ -101,11 +94,9 @@ class EPrenotazione
         $this->id                    = $id;
         $this->codiceIdentificativo  = $codiceIdentificativo;
         $this->pilotaId              = $pilotaId;
-        $this->circuitoId            = $circuitoId;
+        $this->sessioneId            = $sessioneId;
         $this->veicoloNoleggioId     = $veicoloNoleggioId;
         $this->targaVeicolo          = $targaVeicolo;
-        $this->inizioSessione   = $inizioSessione;
-        $this->fineSessione     = $fineSessione;
         $this->numeroBox             = $numeroBox;
         $this->assicurazione         = $assicurazione;
         $this->prezzoImporto         = $prezzoImporto;
@@ -124,9 +115,7 @@ class EPrenotazione
     {
         $e = new self(
             (int)($r['pilota_id'] ?? 0),
-            (int)($r['circuito_id'] ?? 0),
-            (string)($r['inizio_sessione'] ?? ''),
-            (string)($r['fine_sessione'] ?? ''),
+            (int)($r['sessione_id'] ?? 0),
             isset($r['numero_box']) && $r['numero_box'] !== null ? (int)$r['numero_box'] : null,
             isset($r['veicolo_noleggio_id']) && $r['veicolo_noleggio_id'] !== null
                 ? (int)$r['veicolo_noleggio_id'] : null,
@@ -155,12 +144,10 @@ class EPrenotazione
     public function getId(): ?int                 { return $this->id; }
     public function getCodiceIdentificativo(): string { return $this->codiceIdentificativo; }
     public function getPilotaId(): int             { return $this->pilotaId; }
-    public function getCircuitoId(): int         { return $this->circuitoId; }
+    public function getSessioneId(): int         { return $this->sessioneId; }
     public function getVeicoloNoleggioId(): ?int { return $this->veicoloNoleggioId; }
     public function getTargaVeicolo(): ?string   { return $this->targaVeicolo; }
     public function setTargaVeicolo(?string $v): void { $this->targaVeicolo = $v; }
-    public function getInizioSessione(): string { return $this->inizioSessione; }
-    public function getFineSessione(): string   { return $this->fineSessione; }
     public function getNumeroBox(): ?int             { return $this->numeroBox; }
     public function setNumeroBox(?int $v): void      { $this->numeroBox = $v; }
     public function isAssicurazione(): bool      { return $this->assicurazione; }

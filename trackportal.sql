@@ -154,11 +154,9 @@ CREATE TABLE prenotazione (
     id                      INT AUTO_INCREMENT PRIMARY KEY,
     codice_identificativo   VARCHAR(32) NOT NULL UNIQUE,
     pilota_id               INT NOT NULL,
-    circuito_id             INT NOT NULL,
+    sessione_id             INT NOT NULL,
     veicolo_noleggio_id     INT NULL,
     targa_veicolo           VARCHAR(20) NULL,
-    inizio_sessione         DATETIME NOT NULL,
-    fine_sessione           DATETIME NOT NULL,
     numero_box              INT NULL,
     assicurazione           TINYINT(1) NOT NULL DEFAULT 0,
     prezzo_importo          DECIMAL(10,2) NOT NULL,
@@ -175,12 +173,13 @@ CREATE TABLE prenotazione (
     carta_credito_id        INT NULL,
     CONSTRAINT fk_pren_pilota
         FOREIGN KEY (pilota_id) REFERENCES pilota(id),
-    CONSTRAINT fk_pren_circuito
-        FOREIGN KEY (circuito_id) REFERENCES circuito(id),
+    CONSTRAINT fk_pren_sessione
+        FOREIGN KEY (sessione_id) REFERENCES sessione(id),
     CONSTRAINT fk_pren_veicolo
         FOREIGN KEY (veicolo_noleggio_id) REFERENCES veicolo_noleggio(id),
     CONSTRAINT fk_pren_carta
-        FOREIGN KEY (carta_credito_id) REFERENCES carta_credito(id) ON DELETE SET NULL
+        FOREIGN KEY (carta_credito_id) REFERENCES carta_credito(id) ON DELETE SET NULL,
+    INDEX idx_pren_sessione_stato (sessione_id, stato)
 ) ENGINE=InnoDB;
 
 CREATE TABLE sanzione_pilota (
@@ -229,10 +228,6 @@ CREATE TABLE documento_fiscale (
     totale_iva               DECIMAL(10,2) NOT NULL DEFAULT 0,
     totale_documento         DECIMAL(10,2) NOT NULL DEFAULT 0,
     bollo                    DECIMAL(10,2) NOT NULL DEFAULT 0,
-    xml_path                 VARCHAR(255) NULL,
-    sdi_stato                VARCHAR(30)  NULL,
-    sdi_id                   VARCHAR(60)  NULL,
-    data_creazione           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_doc_numerazione UNIQUE (emittente_tipo, emittente_id, anno, numero),
     CONSTRAINT fk_doc_prenotazione
         FOREIGN KEY (prenotazione_id) REFERENCES prenotazione(id) ON DELETE SET NULL,

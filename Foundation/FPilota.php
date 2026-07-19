@@ -143,7 +143,8 @@ class FPilota extends FRepository
 
         if ($circuitoId > 0) {
             $where[] = '(SELECT COUNT(*) FROM prenotazione pr
-                         WHERE pr.pilota_id = p.id AND pr.circuito_id = :circuito
+                         JOIN sessione se ON se.id = pr.sessione_id
+                         WHERE pr.pilota_id = p.id AND se.circuito_id = :circuito
                            AND pr.stato <> \'cancellata\') >= :minBookings';
             $args[':circuito']    = $circuitoId;
             $args[':minBookings'] = max(1, $soglia);

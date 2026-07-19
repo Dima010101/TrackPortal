@@ -282,12 +282,12 @@ if ($circuiti === [] || ($perCategoria['amatoriale'] === [] && $perCategoria['pr
     $insertSess = 'INSERT INTO sessione (circuito_id, inizio, fine, tariffa_accesso, posti_max, posti_per_box, note, stato)
                    VALUES (:c, :ini, :fin, :tariffa, :pmax, :pbox, :note, :stato)';
     $insertPren = "INSERT INTO prenotazione
-        (codice_identificativo, pilota_id, circuito_id, veicolo_noleggio_id, targa_veicolo,
-         inizio_sessione, fine_sessione, numero_box, assicurazione,
+        (codice_identificativo, pilota_id, sessione_id, veicolo_noleggio_id, targa_veicolo,
+         numero_box, assicurazione,
          prezzo_importo, prezzo_valuta, imponibile_accesso, imponibile_noleggio,
          imponibile_assicurazione, stato, data_inserimento, carta_credito_id)
         VALUES
-        (:cod, :pil, :cir, :vei, :targa, :ini, :fin, :box, :ass,
+        (:cod, :pil, :sess, :vei, :targa, :box, :ass,
          :imp, :val, :imp_acc, :imp_nol, :imp_ass, 'confermata', :data, :carta)";
 
     $oggi     = new DateTimeImmutable('today');
@@ -355,6 +355,7 @@ if ($circuiti === [] || ($perCategoria['amatoriale'] === [] && $perCategoria['pr
                 ':note'    => 'Sessione dimostrativa ' . $markerDemo,
                 ':stato'   => $catSess,
             ]);
+            $sessioneId = (int) FDataBase::getInstance()->lastInsertId();
             $totSess++;
 
             $veicoli = $veicoliPerCircuito[$cid] ?? [];
@@ -389,11 +390,9 @@ if ($circuiti === [] || ($perCategoria['amatoriale'] === [] && $perCategoria['pr
                 FDataBase::executeStatement($insertPren, [
                     ':cod'       => sprintf('DEMO-%05d', $seq),
                     ':pil'       => (int) $pil['pilota_id'],
-                    ':cir'       => $cid,
+                    ':sess'      => $sessioneId,
                     ':vei'       => $vid,
                     ':targa'     => $targa,
-                    ':ini'       => $inizio->format('Y-m-d H:i:s'),
-                    ':fin'       => $fine->format('Y-m-d H:i:s'),
                     ':box'       => ($k % $postiBox) + 1,
                     ':ass'       => $assic ? 1 : 0,
                     ':imp'       => number_format($importo, 2, '.', ''),
