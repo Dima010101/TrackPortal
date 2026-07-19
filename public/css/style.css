@@ -1,0 +1,4017 @@
+/* TrackPortal · tema scuro su Bulma 1 + componenti dedicati */
+
+/* ============================================================================
+   TrackPortal — Design tokens
+   Sistema unico di colore, spaziatura, tipografia, raggi ed elevazioni.
+   Il tema scuro è l'identità del brand; i token qui sotto governano ogni schermata.
+   ========================================================================== */
+html[data-theme="dark"] {
+    /* ----- Tipografia (nessun CDN; coerente con CSP font-src 'self') ----- */
+    --bulma-family-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --bulma-family-secondary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --bulma-family-code: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
+
+    /* ----- Palette di brand ----- */
+    --bulma-primary-h: 18deg;     /* arancio pista */
+    --bulma-primary-s: 95%;
+    --bulma-primary-l: 55%;
+    --bulma-link-h: 38deg;        /* accento ambra/oro */
+    --bulma-link-s: 92%;
+    --bulma-link-l: 62%;
+
+    /* Token palette espliciti (uso applicativo) */
+    --tp-primary:   hsl(18deg 95% 55%);
+    --tp-accent:    hsl(38deg 92% 62%);
+    --tp-success:   hsl(152deg 62% 50%);
+    --tp-danger:    hsl(355deg 75% 62%);
+
+    /* ----- Neutri / superfici (grafite freddo) ----- */
+    --bulma-scheme-h: 216;
+    --bulma-scheme-s: 16%;
+    --bulma-body-background-color: hsl(216deg 18% 8%);
+
+    --tp-surface-1: hsl(216deg 16% 11%);  /* card */
+    --tp-surface-2: hsl(216deg 15% 14%);  /* card sollevata / hover */
+    --tp-surface-3: hsl(216deg 14% 18%);  /* input / chip */
+
+    /* ----- Testo (contrasto WCAG AA su superfici scure) ----- */
+    --bulma-text-strong: hsl(216deg 22% 96%);
+    --bulma-text:        hsl(216deg 16% 88%);
+    --bulma-text-weak:   hsl(216deg 14% 73%);   /* muted leggibile (≈ AA) */
+    --bulma-border:        hsl(216deg 14% 24%);
+    --bulma-border-weak:   hsl(216deg 14% 19%);
+    --bulma-body-overflow-x: visible;
+
+    /* ----- Scala tipografica ----- */
+    --fz-xs:  0.75rem;    /* 12 */
+    --fz-sm:  0.8125rem;  /* 13 */
+    --fz-md:  0.9375rem;  /* 15 — corpo */
+    --fz-lg:  1.125rem;   /* 18 */
+
+    /* ----- Raggi ----- */
+    --tp-radius-sm: 0.375rem;
+    --tp-radius-md: 0.625rem;
+    --tp-radius-lg: 0.875rem;
+    --bulma-radius-small: var(--tp-radius-sm);
+    --bulma-radius: var(--tp-radius-md);
+    --bulma-radius-large: var(--tp-radius-lg);
+
+    /* ----- Elevazioni / ombre ----- */
+    --tp-shadow-2: 0 6px 18px rgba(0, 0, 0, 0.32);
+
+    /* ----- Alias retrocompatibili usati nei componenti ----- */
+    --c-border: var(--bulma-border);
+    --c-text-mut: var(--bulma-text-weak);
+
+    /* ----- Pannelli e larghezze form (allineamento rettangoli) ----- */
+    --tp-panel-narrow: 36rem;
+    --tp-panel-medium: 40rem;
+    --tp-panel-wide: 47.5rem;
+    --tp-radius-panel: var(--tp-radius-lg);
+
+    /* ----- Card e Input: override espliciti per visibilità nel tema scuro ----- */
+    --bulma-card-background-color: var(--tp-surface-1);
+
+    --bulma-input-border-color: var(--bulma-border);
+    --bulma-input-hover-border-color: hsl(216deg 14% 38%);
+    --bulma-input-focus-border-color: var(--tp-primary);
+    --bulma-input-focus-box-shadow: 0 0 0 3px hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.20);
+
+    color-scheme: dark;
+}
+
+body {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+
+.tp-page {
+    flex: 1 1 auto;
+    width: 100%;
+    padding-bottom: 2rem;
+}
+
+.tp-page--dashboard {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1 1 auto;
+    min-height: calc(100dvh - var(--bulma-navbar-height, 3.25rem) - var(--tp-footer-height, 6.5rem));
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+    box-sizing: border-box;
+}
+
+.tp-page--dashboard > .container {
+    width: 100%;
+    flex: 0 0 auto;
+}
+
+.tp-hidden {
+    display: none !important;
+}
+
+.tp-navbar {
+    background: rgba(11, 13, 16, 0.88) !important;
+    -webkit-backdrop-filter: saturate(180%) blur(10px);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--bulma-border);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.tp-navbar .navbar-brand .navbar-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tp-navbar .navbar-start > .navbar-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    border-radius: var(--tp-radius-sm);
+    transition: color var(--bulma-speed), background-color var(--bulma-speed);
+}
+
+.tp-navbar .navbar-end .buttons {
+    gap: 0.5rem;
+}
+
+.tp-navbar .navbar-end .buttons .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Navbar identica a ogni larghezza: anche a finestra ridotta (<1024px) la barra
+   resta come a schermo intero — un'unica riga orizzontale, senza burger né JS.
+   Sotto i 1024px Bulma nasconderebbe la .navbar-menu e impilerebbe le voci; qui
+   si replicano le regole "desktop" e si annullano gli stili mobile del menu.
+   --------------------------------------------------------------------------- */
+.tp-navbar > .container {
+    display: flex;
+    align-items: stretch;
+}
+
+/* .navbar.tp-navbar (entrambe sullo stesso <nav>) per battere in specificità
+   la regola mobile .navbar.is-fixed-top .navbar-menu (max-height/overflow:auto),
+   che altrimenti ritaglierebbe la tendina assoluta del menu utente. */
+.navbar.tp-navbar .navbar-menu {
+    display: flex;
+    align-items: stretch;
+    flex-grow: 1;
+    flex-shrink: 0;
+    margin-inline-end: -0.75rem;
+    /* annulla il pannello "a tendina" mobile (sfondo/ombra/padding/scroll) */
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    max-height: none;
+    overflow: visible;
+}
+
+.tp-navbar .navbar-start {
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-start;
+    margin-inline-end: auto;
+}
+
+.tp-navbar .navbar-end {
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-end;
+    margin-inline-start: auto;
+}
+
+.tp-navbar .navbar-item,
+.tp-navbar .navbar-link {
+    display: flex;
+    align-items: center;
+}
+
+.tp-navbar .navbar-item.has-dropdown {
+    align-items: stretch;
+}
+
+/* Menu utente: resta una tendina "popover" (come desktop), non in linea. */
+.tp-navbar .navbar-dropdown {
+    position: absolute;
+    top: 100%;
+    inset-inline-start: 0;
+    min-width: 100%;
+    display: none;
+    background-color: var(--bulma-navbar-dropdown-background-color);
+    border-top: var(--bulma-navbar-dropdown-border-width) var(--bulma-navbar-dropdown-border-style) var(--bulma-navbar-dropdown-border-color);
+    border-end-start-radius: var(--bulma-navbar-dropdown-radius);
+    border-end-end-radius: var(--bulma-navbar-dropdown-radius);
+    box-shadow: 0 0.5em 0.5em hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), var(--bulma-scheme-invert-l), 0.1);
+    z-index: var(--bulma-navbar-dropdown-z);
+}
+
+.tp-navbar .navbar-dropdown.is-right {
+    inset-inline-start: auto;
+    right: 0;
+}
+
+.tp-navbar .navbar-dropdown .navbar-item {
+    padding: 0.375rem 1rem;
+    white-space: nowrap;
+}
+
+.tp-navbar .navbar-item.is-active .navbar-dropdown {
+    display: block;
+}
+
+.tp-navbar .navbar-divider {
+    display: block;
+}
+
+.tp-logo {
+    display: block;
+    height: 1.375rem;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.tp-logo--footer {
+    height: 1.125rem;
+}
+
+.tp-logo--auth {
+    height: 2.5rem;
+    margin: 0 auto;
+}
+
+.tp-footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.tp-auth-brand {
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
+
+.navbar-item .tp-nav-icon {
+    width: 1rem;
+    height: 1rem;
+    opacity: 0.85;
+    flex-shrink: 0;
+}
+
+.navbar-item.is-active {
+    background-color: var(--bulma-navbar-item-selected-background-color) !important;
+}
+
+/* Indicatore "sei qui": evidenzia la sezione attiva della navbar */
+.tp-navbar .navbar-start > .navbar-item.is-active {
+    background-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.12) !important;
+    color: var(--tp-primary) !important;
+    font-weight: 600;
+}
+
+.tp-navbar .navbar-start > .navbar-item.is-active .tp-nav-icon {
+    opacity: 1;
+}
+
+.tp-user-menu .navbar-link,
+.tp-user-menu .tp-user-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent !important;
+}
+
+button.navbar-link,
+button.tp-user-trigger {
+    border: none;
+    font: inherit;
+    cursor: pointer;
+    color: inherit;
+}
+
+/* Doppia freccia: Bulma + icona .tp-chevron — nascondi il caret di default */
+.tp-user-menu .tp-user-trigger.navbar-link::after {
+    display: none !important;
+    content: none !important;
+    border: none !important;
+    margin: 0 !important;
+}
+
+.tp-chevron {
+    width: 0.875rem;
+    height: 0.875rem;
+    opacity: 0.7;
+    transition: transform var(--bulma-speed);
+}
+
+.tp-user-menu.is-active .tp-chevron {
+    transform: rotate(180deg);
+}
+
+.tp-avatar {
+    width: 1.875rem;
+    height: 1.875rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+        135deg,
+        hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 1),
+        hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 1)
+    );
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.tp-avatar.role-admin {
+    background: linear-gradient(135deg, #4aa8ff, #7ec3ff);
+}
+
+.tp-avatar.role-gestore_circuiti {
+    background: linear-gradient(135deg, #1ec27a, #5be0aa);
+}
+
+.tp-avatar.role-gestore_noleggio {
+    background: linear-gradient(135deg, #f0ad4e, #ffd07a);
+}
+
+.tp-dropdown-header {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--bulma-border);
+    margin-bottom: 0.25rem;
+}
+
+.tp-dropdown-header strong {
+    display: block;
+    font-size: 0.875rem;
+}
+
+.tp-dropdown-header span {
+    font-size: 0.75rem;
+    color: var(--bulma-text-weak);
+}
+
+.tp-flash {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.tp-flash svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.tp-flash span {
+    line-height: 1.45;
+}
+
+.tp-footer {
+    margin-top: auto;
+    background: #07080a;
+    border-top: 1px solid var(--bulma-border);
+    padding: 2rem 1.5rem 2.5rem;
+}
+
+.tp-footer-nav a {
+    color: var(--bulma-text-weak);
+    margin-right: 1.25rem;
+}
+
+.tp-footer-nav a:hover {
+    color: var(--bulma-link);
+}
+
+.tp-footer-contacts {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: flex-end;
+    justify-items: end;
+    gap: 0.4rem 1.5rem;
+}
+
+.tp-footer-contacts__title {
+    grid-column: 1 / -1;
+    color: var(--bulma-text-strong);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.15rem;
+}
+
+.tp-footer-contacts a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-right: 0;
+}
+
+.tp-footer-contacts__login {
+    grid-column: 1 / -1;
+    margin-top: 0.35rem;
+}
+
+@media (max-width: 768px) {
+    .tp-footer-contacts {
+        grid-template-columns: auto;
+        justify-content: flex-start;
+        justify-items: start;
+        margin-top: 1.25rem;
+    }
+}
+
+.tp-back span {
+    margin-left: 0.25rem;
+}
+
+.tp-back {
+    margin-bottom: 0.75rem !important;
+}
+
+.tp-icon-btn {
+    width: 2.5rem;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center;
+}
+
+.tp-icon-btn.is-small {
+    width: 2rem;
+}
+
+/* -------- Layout pagina -------- */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.page-header h1 {
+    margin-bottom: 0.25rem !important;
+}
+
+.page-header .lead {
+    margin: 0;
+    font-size: var(--fz-sm);
+    line-height: 1.5;
+    color: var(--bulma-text-weak);
+}
+
+/* -------- Hero home / dettaglio -------- */
+.hero {
+    position: relative;
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--tp-radius-panel);
+    padding: 2.5rem 2rem;
+    margin-bottom: 2rem;
+    background:
+        radial-gradient(circle at 85% 30%, hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.18), transparent 40%),
+        radial-gradient(circle at 15% 90%, hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 0.14), transparent 50%),
+        linear-gradient(180deg, hsl(215, 14%, 14%), hsl(215, 14%, 8%));
+    overflow: hidden;
+}
+
+.hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 60px);
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.hero h1 {
+    font-size: clamp(1.75rem, 4vw, 2.25rem) !important;
+    margin-bottom: 0.5rem !important;
+    background: linear-gradient(180deg, #fff, #d6dde6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+    z-index: 1;
+}
+
+.hero p,
+.hero .lead {
+    color: var(--bulma-text-weak);
+    max-width: 45rem;
+    position: relative;
+    z-index: 1;
+}
+
+.search-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    max-width: 40rem;
+    position: relative;
+    z-index: 1;
+}
+
+.search-bar input {
+    flex: 1;
+}
+
+.search-bar .button {
+    width: 3rem;
+    flex-shrink: 0;
+    padding: 0;
+    justify-content: center;
+}
+
+.search-bar.is-wide {
+    max-width: none;
+    gap: 0.625rem;
+    padding: 0.5rem;
+    background: var(--tp-surface-1);
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--tp-radius-lg);
+    box-shadow: var(--tp-shadow-2);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.search-bar.is-wide input {
+    height: 3.25rem;
+    font-size: var(--fz-lg);
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.search-bar.is-wide input::placeholder {
+    color: var(--bulma-text-weak);
+}
+
+.search-bar.is-wide .button {
+    width: 3.5rem;
+    height: 3.25rem;
+}
+
+.search-bar.is-wide:focus-within {
+    border-color: var(--tp-primary);
+    box-shadow: 0 0 0 3px hsl(18deg 95% 55% / 0.22), var(--tp-shadow-2);
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+/* -------- Griglie legacy (non le .columns di Bulma) -------- */
+.grid {
+    display: grid;
+    gap: 1rem;
+    align-items: stretch;
+}
+
+.grid-2 {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.grid-4 {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.grid-cards {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    align-items: stretch;
+}
+
+/* -------- Card: padding se manca .card-content -------- */
+.card {
+    border-radius: var(--tp-radius-panel);
+}
+
+.card:not(:has(> .card-content)) {
+    padding: 1.25rem;
+}
+
+/* Eyebrow di sezione: dentro le card (.card-title) e fuori (.section-title) */
+.card-title,
+.section-title {
+    font-size: var(--fz-sm) !important;
+    margin: 0 0 0.75rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bulma-text-weak) !important;
+    font-weight: 600 !important;
+}
+
+.flex-between > .section-title {
+    margin-bottom: 0;
+}
+
+.tp-section-block + .tp-section-block {
+    margin-top: 1.5rem;
+}
+
+/* Larghezze pannelli vincolate (sostituisce max-width inline) */
+.tp-panel-narrow {
+    max-width: var(--tp-panel-narrow);
+}
+
+.tp-panel-medium {
+    max-width: var(--tp-panel-medium);
+}
+
+.tp-panel-wide {
+    max-width: var(--tp-panel-wide);
+}
+
+/* Card elenco gestione (allineate alle circuit-card pubbliche) */
+.entity-card {
+    background: var(--bulma-card-background-color);
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--tp-radius-panel);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    height: 100%;
+    transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.entity-card:hover {
+    border-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.45);
+    box-shadow: var(--tp-shadow-2);
+}
+
+.entity-card-title {
+    margin: 0 0 0.25rem !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    color: var(--bulma-text) !important;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.entity-card-footer {
+    margin-top: auto;
+    padding-top: 0.5rem;
+}
+
+.notification:not(:last-child) {
+    margin-bottom: 1rem;
+}
+
+.card-link {
+    display: block;
+    color: inherit !important;
+}
+
+.card-link:hover {
+    color: inherit !important;
+}
+
+.card-link .card {
+    transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.card-link:hover .card {
+    transform: translateY(-2px);
+    box-shadow: var(--tp-shadow-2);
+}
+
+/* -------- Circuit cards -------- */
+.circuit-card {
+    background: var(--bulma-card-background-color);
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--tp-radius-panel);
+    overflow: hidden;
+    transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    color: inherit !important;
+    display: flex;
+    flex-direction: column;
+}
+
+.circuit-card:hover {
+    transform: translateY(-3px);
+    border-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.65);
+    color: inherit !important;
+    box-shadow: var(--tp-shadow-2);
+}
+
+.circuit-card .cc-img {
+    height: 8.75rem;
+    position: relative;
+    background: linear-gradient(135deg, #1f2731 0%, #11151b 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 1);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    overflow: hidden;
+}
+
+.circuit-card .cc-img::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(45deg, transparent 0 10px, hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.05) 10px 12px);
+}
+
+.circuit-card .cc-img span {
+    position: relative;
+    z-index: 1;
+    padding: 0 1rem;
+    text-align: center;
+}
+
+.circuit-card .cc-img img {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.circuit-card .cc-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.circuit-card h3 {
+    margin: 0 !important;
+    font-size: 1rem !important;
+}
+
+.circuit-card .cc-meta {
+    color: var(--bulma-text-weak);
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* -------- KPI -------- */
+.kpi {
+    background: var(--bulma-card-background-color);
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--tp-radius-panel);
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.2), transparent 70%);
+    pointer-events: none;
+}
+
+.kpi .kpi-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.kpi .kpi-label {
+    color: var(--bulma-text-weak);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0.35rem;
+}
+
+.kpi .kpi-icon {
+    color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 1);
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.75;
+}
+
+/* -------- Form row (markup legacy) -------- */
+.form-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 30rem;
+}
+
+.form-stack.is-wide {
+    max-width: none;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.form-row label {
+    font-size: 0.75rem;
+    color: var(--bulma-text-weak);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.form-row .help,
+.form-row + .help {
+    font-size: 0.75rem;
+    color: var(--bulma-text-weak);
+}
+
+label.inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    color: var(--bulma-text);
+}
+
+.radio-card {
+    display: block;
+    cursor: pointer;
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--bulma-radius);
+    padding: 1rem;
+    transition: border-color 120ms ease, background 120ms ease;
+    margin-bottom: 0.5rem;
+}
+
+.radio-card:hover {
+    border-color: var(--bulma-border-weak);
+}
+
+.radio-card input[type="radio"] {
+    margin-right: 0.5rem;
+}
+
+.radio-card:has(input:checked) {
+    border-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 1);
+    background: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.08);
+}
+
+.auth-wrapper {
+    max-width: 28rem;
+    margin: 2.5rem auto;
+}
+
+.auth-wrapper.wide {
+    max-width: 37.5rem;
+}
+
+.tp-auth-card .card-content {
+    padding: 1.75rem 1.5rem;
+}
+
+.tp-auth-card .subtitle {
+    margin-top: -0.25rem;
+}
+
+/* -------- Tabs toolbar (.btn-group) -------- */
+.btn-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    background: var(--bulma-card-background-color);
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--bulma-radius);
+    padding: 0.25rem;
+    gap: 0.15rem;
+}
+
+.btn-group a,
+.btn-group button {
+    background: transparent;
+    color: var(--bulma-text-weak);
+    border: none;
+    padding: 0.35rem 0.85rem;
+    border-radius: calc(var(--bulma-radius) - 2px);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    font: inherit;
+    text-decoration: none !important;
+    display: inline-block;
+}
+
+.btn-group a:hover,
+.btn-group button:hover {
+    color: var(--bulma-text);
+}
+
+.btn-group a.is-active,
+.btn-group button.is-active {
+    background: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 1);
+    color: var(--bulma-primary-invert);
+}
+
+/* -------- Tabelle -------- */
+.table-wrap {
+    overflow-x: auto;
+    border-radius: var(--tp-radius-panel);
+    border: 1px solid var(--bulma-border);
+}
+
+.table-wrap .table {
+    width: 100%;
+}
+
+.table:has(td.actions) {
+    table-layout: fixed;
+}
+
+.table:has(td.actions) th:last-child,
+.table td.actions {
+    width: auto;
+}
+
+.table:has(td.actions) tbody td {
+    vertical-align: middle;
+}
+
+.table:has(td.actions) tbody tr:not(:last-child) td {
+    border-bottom: none;
+    box-shadow: inset 0 -1px 0 var(--bulma-border);
+}
+
+/* La cella azioni resta una table-cell (NON display:flex, che la farebbe
+   avvolgere in una cella anonima più bassa della riga, disallineando il bordo
+   inferiore = linea separatrice "a gradino"). I bottoni si allineano a destra
+   inline, su un'unica riga. */
+.table td.actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.table td.actions > * {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.table td.actions > * + * {
+    margin-left: 0.35rem;
+}
+
+/* Lista prenotazioni pilota: colonne fisse + azioni a destra */
+.tp-booking-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.tp-booking-table .tp-col-code {
+    width: 14%;
+}
+
+.tp-booking-table .tp-col-circuit {
+    width: 24%;
+}
+
+.tp-booking-table .tp-col-date {
+    width: 12%;
+}
+
+.tp-booking-table .tp-col-amount {
+    width: 12%;
+}
+
+.tp-booking-table .tp-col-status {
+    width: 12%;
+}
+
+.tp-booking-table .tp-col-actions {
+    width: auto;
+}
+
+.tp-booking-table td.actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Flotta veicoli per circuito */
+.tp-fleet-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.tp-fleet-table .tp-col-vehicle {
+    width: 34%;
+}
+
+.tp-fleet-table .tp-col-plate {
+    width: 12%;
+}
+
+.tp-fleet-table .tp-col-price {
+    width: 12%;
+}
+
+.tp-fleet-table .tp-col-count {
+    width: 8%;
+}
+
+.tp-fleet-table .tp-col-status {
+    width: 14%;
+}
+
+.tp-fleet-table .tp-col-actions {
+    width: auto;
+}
+
+.tp-fleet-table td.actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Azioni compatte in tabella: bottoni piccoli con icona allineata al testo
+   (inline-flex, non il default inline-block della cella, che disallinea l'icona),
+   liberi di andare a capo così la colonna non forza lo scroll orizzontale del box.
+   Usato dallo storico gestori (fattura + sospendi/banna) e dalla pagina Convalida
+   (bottone Dettaglio). */
+.tp-storico-actions td.actions,
+.tp-compact-actions td.actions {
+    white-space: normal;
+}
+
+.tp-storico-actions td.actions > *,
+.tp-compact-actions td.actions > * {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    vertical-align: middle;
+    margin: 0.15rem 0 0.15rem 0.35rem;
+}
+
+.tp-storico-actions td.actions .button,
+.tp-compact-actions td.actions .button {
+    font-size: 0.75rem;
+    padding: 0.22rem 0.5rem;
+    min-height: 0;
+    white-space: nowrap;
+}
+
+.tp-storico-actions td.actions .button svg,
+.tp-compact-actions td.actions .button svg {
+    width: 14px;
+    height: 14px;
+}
+
+.inline-form {
+    display: inline;
+}
+
+/* -------- Badge stato -------- */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.65rem;
+    border-radius: var(--bulma-radius-rounded);
+    font-size: 0.7rem;
+    font-weight: 600;
+    border: 1px solid var(--bulma-border);
+    background: var(--bulma-card-background-color);
+    color: var(--bulma-text-weak);
+    line-height: 1.4;
+}
+
+.badge::before {
+    content: "";
+    width: 0.35rem;
+    height: 0.35rem;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.badge.in_attesa {
+    background: hsla(36, 85%, 55%, 0.12);
+    color: hsl(36, 85%, 65%);
+    border-color: hsla(36, 85%, 55%, 0.4);
+}
+
+.badge.confermata {
+    background: hsla(152, 70%, 45%, 0.14);
+    color: hsl(152, 65%, 62%);
+    border-color: hsla(152, 70%, 45%, 0.42);
+}
+
+.badge.completata,
+.badge.terminata {
+    background: hsla(207, 85%, 55%, 0.12);
+    color: hsl(207, 85%, 68%);
+    border-color: hsla(207, 85%, 55%, 0.4);
+}
+
+.badge.cancellata,
+.badge.annullata,
+.badge.rifiutata {
+    background: hsla(355, 70%, 55%, 0.12);
+    color: hsl(355, 70%, 68%);
+    border-color: hsla(355, 70%, 55%, 0.4);
+}
+
+/* -------- Dettaglio / session row / steps -------- */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    align-items: stretch;
+}
+
+.detail-grid > div {
+    min-width: 0;
+}
+
+.detail-grid__main {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.detail-grid > .card,
+.detail-grid > aside,
+.detail-grid > section,
+.detail-grid > form {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 100%;
+}
+
+.detail-grid--checkout > form,
+.detail-grid--checkout > aside,
+.detail-grid--booking > .card,
+.detail-grid--booking > aside {
+    align-self: stretch;
+    height: 100%;
+}
+
+.detail-grid--checkout > form > .button.is-primary {
+    margin-top: auto;
+}
+
+.detail-grid--checkout > aside > hr.divider:last-of-type,
+.detail-grid--booking > aside > hr.divider:last-of-type {
+    margin-top: auto;
+}
+
+/* -------- Box esplicativo assicurazione (pagine targa / noleggio) -------- */
+.tp-insurance-box {
+    background:
+        linear-gradient(
+            180deg,
+            hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.06),
+            transparent 60%
+        );
+    border: 1px solid hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.30);
+}
+
+.tp-insurance-box__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.tp-insurance-box__icon {
+    color: var(--tp-primary);
+    flex: 0 0 auto;
+}
+
+.tp-insurance-box__intro {
+    margin-bottom: 0.85rem;
+}
+
+.tp-insurance-benefits {
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.tp-insurance-benefits li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--bulma-text);
+}
+
+.tp-insurance-benefits__ico {
+    color: var(--tp-primary);
+    flex: 0 0 auto;
+    margin-top: 0.15rem;
+}
+
+.tp-insurance-toggle {
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    margin-top: auto;
+    border: 1px solid hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.35);
+    border-radius: var(--bulma-radius);
+    background: var(--bulma-scheme-main, #fff);
+    font-size: 0.9rem;
+}
+
+.tp-insurance-toggle input[type="checkbox"] {
+    margin-top: 0.15rem;
+}
+
+.tp-insurance-box__note {
+    margin: 0.5rem 0 0;
+}
+
+/* Scheda sessione (gestore): form a sinistra, prenotazioni a destra */
+.tp-session-split {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.tp-session-split__form {
+    flex: 1 1 22rem;
+    margin: 0;
+}
+
+.tp-session-split__bookings {
+    flex: 2 1 30rem;
+    min-width: 0;
+    align-self: stretch;
+}
+
+.tp-session-split__bookings .table-wrap {
+    margin-top: 0;
+}
+
+/* Colonna stretta: niente layout fisso (che schiaccerebbe e sovrapporrebbe le
+   intestazioni). Le colonne si dimensionano sul contenuto e la table-wrap
+   scorre in orizzontale quando serve. */
+.tp-session-split__bookings .table-wrap .table {
+    table-layout: auto;
+    min-width: 44rem;
+}
+
+.tp-session-split__bookings .table-wrap .table th {
+    white-space: nowrap;
+}
+
+/* Riga calendario + veicoli popolari affiancati */
+.tp-cal-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 1.5rem;
+}
+
+.tp-cal-row > .tp-cal-card {
+    /* Larghezza vincolata: il calendario resta compatto invece di allargarsi a
+       tutta la pagina, lasciando spazio alla colonna descrizione/foto accanto. */
+    flex: 0 1 46rem;
+    width: auto;
+    max-width: 46rem;
+}
+
+.tp-cal-row > .tp-popular-aside {
+    flex: 1 1 16rem;
+    width: auto;
+    min-width: 16rem;
+    max-width: 20rem;
+}
+
+/* Colonna destra della scheda circuito: calendario, recapiti e veicoli
+   disponibili impilati. Prende la larghezza maggiore; la colonna foto resta
+   a sinistra. */
+.tp-cal-row > .tp-cal-stack {
+    flex: 1 1 46rem;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.tp-cal-stack > .card {
+    width: 100%;
+    max-width: none;
+}
+
+/* Calendario compatto: tabella a filo con il bordo inferiore della card */
+.tp-cal-card:not(:has(> .card-content)) {
+    padding: 0;
+    overflow: hidden;
+}
+
+.tp-cal-card-head {
+    padding: 1.25rem 1.25rem 0.75rem;
+}
+
+.tp-cal-card .tp-cal-toolbar {
+    padding: 0 1.25rem;
+    margin-bottom: 0.75rem !important;
+}
+
+.tp-cal-card .tp-cal-legend {
+    padding: 0 1.25rem;
+    margin-bottom: 0 !important;
+}
+
+.tp-cal-card .tp-cal-wrap {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    margin-top: 0.75rem;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 0 0 var(--tp-radius-panel) var(--tp-radius-panel);
+}
+
+.card .tp-cal-wrap {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.tp-cal-card .tp-cal-table {
+    /* Riempie la card vincolata (non più max-content, che si allargava a tutta
+       la pagina): griglia compatta che lascia respiro alla colonna foto/descrizione. */
+    width: 100%;
+    min-width: 34rem;
+    margin-bottom: 0;
+    font-size: var(--fz-xs);
+}
+
+.tp-cal-card .tp-cal-ora-col {
+    width: 3.75rem;
+}
+
+.tp-cal-card .tp-cal-cell {
+    min-width: 3.5rem;
+}
+
+.tp-cal-card .tp-cal-table th,
+.tp-cal-card .tp-cal-table td {
+    padding: 0.4rem 0.25rem;
+}
+
+.tp-cal-card .tp-cal-badge {
+    font-size: 0.62rem;
+    padding: 0.12rem 0.25rem;
+}
+
+.tp-popular-aside {
+    height: 100%;
+}
+
+.session-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--bulma-radius);
+    background: hsla(221, 14%, 12%, 0.5);
+    margin-bottom: 0.35rem;
+    transition: border-color 120ms ease, background 120ms ease;
+}
+
+.session-row:hover {
+    border-color: var(--bulma-border-weak);
+    background: var(--bulma-card-background-color);
+}
+
+.session-row .sess-title {
+    font-weight: 600;
+}
+
+.session-row .sess-meta {
+    color: var(--bulma-text-weak);
+    font-size: 0.75rem;
+    margin-top: 0.2rem;
+}
+
+.steps {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.steps .step {
+    flex: 1;
+    min-width: 140px;
+    padding: 0.65rem 1rem;
+    background: var(--bulma-card-background-color);
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--bulma-radius);
+    font-size: 0.7rem;
+    color: var(--bulma-text-weak);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+}
+
+.steps .step .num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: hsla(221, 14%, 16%, 1);
+    border: 1px solid var(--bulma-border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.65rem;
+}
+
+.steps .step.active {
+    background: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 1);
+    color: var(--bulma-primary-invert);
+    border-color: transparent;
+}
+
+.steps .step.active .num {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: transparent;
+}
+
+.steps .step.done {
+    border-color: hsl(152, 70%, 45%);
+    color: hsl(152, 70%, 55%);
+}
+
+.steps .step.done .num {
+    background: hsl(152, 70%, 45%);
+    color: #fff;
+    border-color: transparent;
+}
+
+.empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--bulma-text-weak);
+    background: var(--bulma-card-background-color);
+    border: 1px dashed var(--bulma-border);
+    border-radius: var(--tp-radius-panel);
+}
+
+.empty-state > svg {
+    margin: 0 auto 0.75rem;
+    color: var(--bulma-text-weak);
+    opacity: 0.7;
+}
+
+.empty-state .button svg {
+    margin: 0;
+    color: currentColor;
+    opacity: 1;
+}
+
+.empty-state h3 {
+    margin-bottom: 0.35rem !important;
+}
+
+/* Stato vuoto dentro una card: niente doppio bordo */
+.card > .empty-state {
+    border: none;
+    background: transparent;
+    padding: 2rem 0.5rem;
+}
+
+/* Gestione piloti: le due card sono già di pari altezza (grid stretch); qui il
+   contenuto della card di destra (stato vuoto o tabella) viene centrato
+   verticalmente così da allinearsi visivamente al box del form a sinistra. */
+.tp-sanzioni-cols > .card {
+    display: flex;
+    flex-direction: column;
+}
+
+.tp-sanzioni-cols > .card > .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Tabella "Provvedimenti emessi": vive in una colonna stretta (grid-2) e ha
+   celle azioni, quindi il table-layout fisso schiacciava le colonne e faceva
+   sovrapporre le intestazioni (es. "Provvedimento"/"Periodo"). Layout
+   automatico + larghezza minima: le colonne si dimensionano sul contenuto e la
+   .table-wrap scorre in orizzontale quando lo spazio non basta. */
+.tp-sanzioni-emesse .table-wrap .table {
+    table-layout: auto;
+    min-width: 42rem;
+}
+
+.tp-sanzioni-emesse .table-wrap .table th {
+    white-space: nowrap;
+}
+
+/* Stato sanzione neutro (Scaduta / Revocata): il tag Bulma is-light era
+   praticamente bianco su bianco e spariva sul tema scuro. Pillola grafite del
+   brand con testo chiaro, ben leggibile. */
+.tag.tp-tag-stato {
+    background: hsla(216deg, 12%, 55%, 0.28);
+    color: var(--bulma-text);
+    border: 1px solid var(--bulma-border);
+}
+
+/* "Già sanzionato": stato bloccato dell'azione Sospendi/Banna. Il tag Bulma
+   is-light era bianco su bianco e spariva sul tema scuro. Pillola grafite del
+   brand con testo rosso danger — lo stesso del pulsante di sanzione affiancato
+   — così pillola e scritta hanno colori distinti, entrambi nella palette. */
+.tag.tp-tag-sanzionato {
+    background: hsla(216deg, 12%, 55%, 0.28);
+    color: var(--tp-danger);
+    border: 1px solid hsla(355deg, 75%, 62%, 0.42);
+}
+
+/* -------- Combobox di ricerca (es. selezione pilota da sanzionare) --------
+   Sostituisce il <select> con una barra di ricerca: un input di testo filtra
+   l'elenco a tendina; la scelta popola un <input type="hidden"> con l'id. */
+.tp-combobox {
+    position: relative;
+}
+
+.tp-combobox-list {
+    display: block;
+    list-style: none;
+    margin: 0.25rem 0 0;
+    padding: 0.25rem;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    max-height: 16rem;
+    overflow-y: auto;
+    background: var(--tp-surface-2);
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--tp-radius-md);
+    box-shadow: var(--tp-shadow-2);
+}
+
+.tp-combobox-list[hidden] {
+    display: none;
+}
+
+.tp-combobox-option {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.5rem 0.625rem;
+    border-radius: var(--tp-radius-sm);
+    cursor: pointer;
+}
+
+.tp-combobox-option[hidden] {
+    display: none;
+}
+
+.tp-combobox-option:hover,
+.tp-combobox-option.is-active {
+    background: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.14);
+}
+
+.tp-combobox-empty {
+    padding: 0.625rem;
+    color: var(--bulma-text-weak);
+    font-size: var(--fz-sm);
+}
+
+.tp-combobox-empty[hidden] {
+    display: none;
+}
+
+/* -------- Testo helper -------- */
+.text-muted {
+    color: var(--bulma-text-weak) !important;
+}
+
+.text-small {
+    font-size: var(--fz-xs);
+    line-height: 1.45;
+}
+
+.text-dim {
+    color: var(--bulma-text-60) !important;
+}
+
+.divider {
+    height: 1px;
+    background: var(--bulma-border);
+    margin: 1rem 0;
+    border: none;
+}
+
+.mt-2 { margin-top: 0.5rem !important; }
+.mt-3 { margin-top: 1rem !important; }
+.mt-4 { margin-top: 1.5rem !important; }
+.mb-0 { margin-bottom: 0 !important; }
+.mb-2 { margin-bottom: 0.5rem !important; }
+.mb-3 { margin-bottom: 1rem !important; }
+
+.flex {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.tp-lead-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.breadcrumb a {
+    color: hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 1);
+}
+
+.breadcrumb li.is-active a {
+    color: var(--bulma-text-weak);
+    pointer-events: none;
+}
+
+.tp-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.tp-filter-bar .tp-filter-search {
+    flex: 1;
+    min-width: 220px;
+}
+
+.tp-card-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.tp-card-heading .card-title {
+    margin-bottom: 0 !important;
+}
+
+.tp-list-row {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--bulma-border);
+}
+
+.tp-list-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.tp-list-row:first-child {
+    padding-top: 0;
+}
+
+.tp-price {
+    color: hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 1);
+    font-weight: 600;
+}
+
+.tp-summary-total {
+    margin: 0;
+    text-align: right;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 1);
+}
+
+.empty-state.tp-narrow {
+    max-width: 32.5rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-state .tp-empty-actions {
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+/* Stack trace della pagina 500: visibile solo con APP_DEBUG attivo. */
+.tp-debug-trace {
+    margin-top: 1.5rem;
+    padding: 0.75rem;
+    max-height: 20rem;
+    overflow: auto;
+    text-align: left;
+    white-space: pre-wrap;
+    word-break: break-all;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 0.35rem;
+}
+
+.table-wrap.is-ghost {
+    border: none;
+}
+
+.table.is-ghost {
+    background: transparent;
+    min-width: 0;
+}
+
+.input.is-uppercase {
+    text-transform: uppercase;
+}
+
+.radio-card .radio-card-desc {
+    font-size: var(--fz-xs);
+    color: var(--bulma-text-weak);
+    margin-top: 0.35rem;
+    line-height: 1.45;
+}
+
+a.button,
+button.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    line-height: 1.2;
+}
+
+a.button svg,
+button.button svg {
+    display: block;
+    flex-shrink: 0;
+}
+
+.tp-promo-toolbar {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* -------- Veicoli a noleggio (scheda circuito) -------- */
+.vehicle-grid {
+    margin-top: 0.75rem;
+}
+
+.vehicle-card {
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--bulma-radius);
+    padding: 1rem;
+    background: hsla(221, 14%, 12%, 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    height: 100%;
+}
+
+.vehicle-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.vehicle-card-title {
+    font-size: 0.95rem;
+    line-height: 1.35;
+}
+
+.vehicle-card-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    line-height: 1.45;
+}
+
+/* -------- Focus visibile -------- */
+:focus-visible {
+    outline: 2px solid hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 1);
+    outline-offset: 2px;
+}
+
+/* -------- Stampa -------- */
+@media print {
+    .tp-navbar,
+    .tp-footer,
+    .button {
+        display: none !important;
+    }
+}
+
+/* Input / select / textarea nei form-row senza classe .input (Bulma) */
+.form-row > input:not(.input):not([type="hidden"]):not([type="radio"]):not([type="checkbox"]),
+.form-row input:not(.input):not([type="hidden"]):not([type="radio"]):not([type="checkbox"]) {
+    box-shadow: var(--bulma-input-shadow);
+    max-width: 100%;
+    width: 100%;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+    align-items: center;
+    border: var(--bulma-input-border-width) var(--bulma-input-border-style) var(--bulma-input-border-color);
+    border-radius: var(--bulma-radius);
+    display: inline-flex;
+    font-family: inherit;
+    font-size: var(--bulma-size-normal);
+    justify-content: flex-start;
+    line-height: var(--bulma-control-line-height);
+    padding: var(--bulma-control-padding-vertical) var(--bulma-control-padding-horizontal);
+    vertical-align: top;
+    min-height: var(--bulma-input-height);
+    background-color: var(--tp-surface-3);
+    color: hsl(var(--bulma-text-h), var(--bulma-text-s), var(--bulma-input-color-l));
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.form-row > input:not(.input):not([type="hidden"]):not([type="radio"]):not([type="checkbox"]):hover,
+.form-row input:not(.input):not([type="hidden"]):not([type="radio"]):not([type="checkbox"]):hover {
+    border-color: var(--bulma-input-hover-border-color);
+}
+
+.form-row > input:not(.input):not([type="hidden"]):not([type="radio"]):not([type="checkbox"]):focus,
+.form-row input:not(.input):not([type="hidden"]):not([type="radio"]):not([type="checkbox"]):focus {
+    border-color: var(--bulma-input-focus-border-color);
+    box-shadow: var(--bulma-input-focus-box-shadow);
+    outline: none;
+}
+
+/* Select nei form: stesso linguaggio visivo degli input (freccia SVG, tema scuro) */
+form select:not([multiple]) {
+    --tp-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239aa5b5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    box-shadow: var(--bulma-input-shadow);
+    max-width: 100%;
+    width: 100%;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+    border: var(--bulma-input-border-width) var(--bulma-input-border-style) var(--bulma-input-border-color);
+    border-radius: var(--bulma-radius);
+    font-family: inherit;
+    font-size: var(--bulma-size-normal);
+    line-height: var(--bulma-control-line-height);
+    padding: var(--bulma-control-padding-vertical) calc(var(--bulma-control-padding-horizontal) + 1.5rem)
+        var(--bulma-control-padding-vertical) var(--bulma-control-padding-horizontal);
+    min-height: var(--bulma-input-height);
+    background-color: var(--tp-surface-3);
+    color: hsl(var(--bulma-text-h), var(--bulma-text-s), var(--bulma-input-color-l));
+    cursor: pointer;
+    background-image: var(--tp-select-chevron);
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    background-size: 1rem 1rem;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+form select:not([multiple]):hover {
+    border-color: var(--bulma-input-hover-border-color);
+}
+
+form select:not([multiple]):focus {
+    border-color: var(--bulma-input-focus-border-color);
+    box-shadow: var(--bulma-input-focus-box-shadow);
+}
+
+form select:not([multiple]):disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    background-image: none;
+    padding-right: var(--bulma-control-padding-horizontal);
+}
+
+.form-row textarea {
+    box-shadow: var(--bulma-input-shadow);
+    max-width: 100%;
+    width: 100%;
+    border: var(--bulma-input-border-width) var(--bulma-input-border-style) var(--bulma-input-border-color);
+    border-radius: var(--bulma-radius);
+    font-size: var(--bulma-size-normal);
+    font-family: inherit;
+    line-height: var(--bulma-control-line-height);
+    padding: var(--bulma-control-padding-vertical) var(--bulma-control-padding-horizontal);
+    min-height: 6em;
+    resize: vertical;
+    display: block;
+    background-color: var(--tp-surface-3);
+    color: hsl(var(--bulma-text-h), var(--bulma-text-s), var(--bulma-input-color-l));
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.form-row textarea:hover {
+    border-color: var(--bulma-input-hover-border-color);
+}
+
+.form-row textarea:focus {
+    border-color: var(--bulma-input-focus-border-color);
+    box-shadow: var(--bulma-input-focus-box-shadow);
+    outline: none;
+}
+
+/* -------- Pannello di conferma (HTML) -------- */
+.confirm-panel {
+    margin-bottom: 1.5rem;
+    padding: 1.75rem 1.5rem 1.5rem;
+    text-align: center;
+    border: 1px solid hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.35);
+    border-radius: var(--tp-radius-panel);
+    background: linear-gradient(
+        180deg,
+        hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.1) 0%,
+        transparent 72%
+    );
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+}
+
+.confirm-panel--booking {
+    padding: 2rem 1.75rem 1.75rem;
+}
+
+.confirm-panel-eyebrow {
+    margin: 0 0 0.75rem;
+    font-size: var(--fz-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: hsl(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l));
+}
+
+.confirm-panel-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    margin: 0 auto 1rem;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: hsl(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l));
+    background: hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.14);
+    box-shadow: inset 0 0 0 1px hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.22);
+}
+
+.confirm-panel-title {
+    font-size: 1.35rem;
+    margin-bottom: 0.5rem !important;
+}
+
+.confirm-panel-message {
+    max-width: 34rem;
+    margin: 0 auto 1rem;
+    color: var(--bulma-text-weak);
+    line-height: 1.55;
+}
+
+.confirm-panel-highlight {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    max-width: 32rem;
+    margin: 0 auto 1.25rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--bulma-radius);
+    border: 1px solid hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 0.25);
+    background: hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 0.08);
+    color: var(--bulma-text);
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.confirm-panel-highlight-icon {
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+
+.confirm-panel-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 0.75rem;
+    max-width: var(--tp-panel-medium);
+    margin: 0 auto 1.25rem;
+    padding: 1rem;
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--bulma-radius);
+    background: rgba(255, 255, 255, 0.02);
+    text-align: left;
+}
+
+/* Griglia dati dentro una card: un solo bordo esterno */
+.card > .confirm-panel-details {
+    border: none;
+    background: none;
+    padding: 0;
+    margin: 0;
+    max-width: none;
+}
+
+.confirm-panel-detail dt {
+    font-size: var(--fz-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bulma-text-weak);
+    margin-bottom: 0.2rem;
+}
+
+.confirm-panel-detail dd {
+    margin: 0;
+    font-weight: 600;
+}
+
+/* Liste descrittive (dt = etichetta, dd = valore). Stessa resa tipografica
+   delle .confirm-panel-detail usate nel resto del sito, così le schermate
+   admin (convalida, dettaglio richiesta) restano coerenti: etichetta piccola
+   in maiuscoletto attenuato, valore in evidenza. */
+.tp-dl {
+    margin: 0;
+}
+
+.tp-dl dt {
+    margin: 0 0 0.15rem;
+    font-size: var(--fz-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bulma-text-weak);
+}
+
+.tp-dl dd {
+    margin: 0 0 0.9rem;
+    color: var(--bulma-text);
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.tp-dl dd:last-child {
+    margin-bottom: 0;
+}
+
+.confirm-panel-form {
+    max-width: 28rem;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.confirm-panel-actions {
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.confirm-panel-actions .button {
+    min-width: 8rem;
+}
+
+.confirm-panel-submit {
+    font-weight: 600;
+}
+
+.cancel-section {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1.1rem 1.15rem;
+    border: 1px solid hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.28);
+    border-radius: var(--bulma-radius);
+    background: hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.06);
+}
+
+.cancel-section-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: hsl(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l));
+    background: hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.12);
+    flex-shrink: 0;
+}
+
+.cancel-section-body {
+    flex: 1 1 14rem;
+}
+
+.cancel-section-title {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+}
+
+.cancel-section-action {
+    margin-left: auto;
+    font-weight: 600;
+}
+
+.promo-table-desc {
+    max-width: 16rem;
+    color: var(--bulma-text-weak);
+    font-size: var(--fz-sm);
+    line-height: 1.45;
+    white-space: normal;
+}
+
+.promo-applied-desc {
+    margin: 0.25rem 0 0.75rem;
+    line-height: 1.5;
+}
+
+.promo-form-card {
+    overflow: hidden;
+}
+
+.promo-form-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--bulma-border);
+}
+
+.promo-riepilogo .promo-form-header {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.promo-form-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--bulma-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: hsl(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l));
+    background: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.12);
+    box-shadow: inset 0 0 0 1px hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.18);
+}
+
+.promo-form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--bulma-border);
+}
+
+.tp-promo-submit {
+    width: 100%;
+    justify-content: center;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow:
+        0 10px 28px hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tp-promo-submit:hover {
+    transform: translateY(-1px);
+    box-shadow:
+        0 14px 32px hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.34),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Calendario settimanale gestore circuiti */
+.tp-cal-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.tp-cal-week-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.tp-cal-week-label {
+    font-size: var(--fz-sm);
+    color: var(--c-text-mut);
+}
+
+.tp-cal-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.tp-cal-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: var(--fz-sm);
+    color: var(--c-text-mut);
+}
+
+.tp-cal-legend-item::before {
+    content: '';
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 3px;
+    border: 1px solid var(--c-border);
+}
+
+.tp-cal-legend-item.tp-cal-slot--libero::before {
+    background: transparent;
+}
+
+.tp-cal-legend-item.tp-cal-slot--privata::before {
+    /* neutro grafite del brand (216°) anziché grigio puro */
+    background: hsla(216deg, 12%, 55%, 0.35);
+    border-color: hsl(216deg, 12%, 55%);
+}
+
+.tp-cal-legend-item.tp-cal-slot--prenotato::before {
+    /* --tp-accent (ambra/oro) */
+    background: hsla(38deg, 92%, 62%, 0.35);
+    border-color: hsl(38deg, 92%, 62%);
+}
+
+.tp-cal-legend-item.tp-cal-slot--amatoriale::before {
+    /* --tp-success (verde brand) */
+    background: hsla(152deg, 62%, 50%, 0.35);
+    border-color: hsl(152deg, 62%, 50%);
+}
+
+.tp-cal-legend-item.tp-cal-slot--professionistica::before {
+    /* --tp-primary (arancio pista) */
+    background: hsla(18deg, 95%, 55%, 0.35);
+    border-color: hsl(18deg, 95%, 55%);
+}
+
+.tp-cal-wrap {
+    overflow-x: auto;
+}
+
+.tp-cal-table {
+    min-width: 52rem;
+    font-size: var(--fz-sm);
+    /* Colonne a larghezza fissa e uguale: le intestazioni dei giorni restano
+       centrate sopra le rispettive colonne anche quando le celle ospitano
+       sessioni di larghezza diversa (disponibili / private / concluse...). */
+    table-layout: fixed;
+}
+
+.tp-cal-table th,
+.tp-cal-table td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.45rem 0.35rem;
+}
+
+.tp-cal-ora-col {
+    width: 4.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: left !important;
+    color: var(--c-text-mut);
+}
+
+.tp-cal-cell {
+    min-width: 4.5rem;
+    height: 2.5rem;
+}
+
+/* Riquadri sessione con bordi evidenti. Lo sfondo e il bordo stanno sulla cella
+   (non solo su .tp-cal-link), così le sessioni restano riconoscibili anche nel
+   calendario pubblico in sola lettura, dove la cella contiene solo il badge:
+   private e concluse non si confondono più con lo sfondo. */
+.tp-cal-cell.tp-cal-slot--amatoriale {
+    background: hsla(152deg, 62%, 50%, 0.13);
+    border: 1px solid hsla(152deg, 62%, 55%, 0.6);
+}
+
+.tp-cal-cell.tp-cal-slot--professionistica {
+    background: hsla(18deg, 95%, 55%, 0.13);
+    border: 1px solid hsla(18deg, 95%, 60%, 0.6);
+}
+
+.tp-cal-cell.tp-cal-slot--privata {
+    background: hsla(216deg, 12%, 55%, 0.16);
+    border: 1px solid hsla(216deg, 14%, 70%, 0.6);
+}
+
+.tp-cal-cell.tp-cal-slot--prenotato,
+.tp-cal-cell.tp-cal-slot--mia-prenotazione {
+    border: 1px solid hsla(38deg, 92%, 62%, 0.7);
+}
+
+.tp-cal-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-height: 2rem;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.tp-cal-link--empty {
+    color: var(--c-text-mut);
+    opacity: 0.5;
+}
+
+.tp-cal-link--empty:hover {
+    opacity: 1;
+    background: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.12);
+}
+
+.tp-cal-readonly-empty {
+    cursor: default;
+    opacity: 0.35;
+}
+
+.tp-cal-cell--clickable {
+    cursor: pointer;
+}
+
+.tp-cal-cell--clickable .tp-cal-link:hover {
+    background: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.32);
+}
+
+.tp-cal-slot--privata .tp-cal-link {
+    /* neutro grafite del brand (216°) anziché grigio puro */
+    background: hsla(216deg, 12%, 55%, 0.2);
+}
+
+.tp-cal-slot--amatoriale .tp-cal-link {
+    /* --tp-success (verde brand) */
+    background: hsla(152deg, 62%, 50%, 0.18);
+    cursor: pointer;
+}
+
+.tp-cal-slot--professionistica .tp-cal-link {
+    /* --tp-primary (arancio pista) */
+    background: hsla(18deg, 95%, 55%, 0.18);
+    cursor: pointer;
+}
+
+/* Sessione che copre più ore: cella unica (rowspan) centrata verticalmente. */
+.tp-cal-cell--span {
+    vertical-align: middle;
+    text-align: center;
+}
+
+.tp-cal-cell--span .tp-cal-link {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tp-cal-cell--span .tp-cal-badge {
+    white-space: normal;
+    line-height: 1.3;
+}
+
+.tp-cal-slot--prenotato,
+.tp-cal-slot--mia-prenotazione {
+    /* --tp-accent (ambra/oro) */
+    background: hsla(38deg, 92%, 62%, 0.12);
+}
+
+.tp-cal-slot--mia-prenotazione .tp-cal-link {
+    background: hsla(38deg, 92%, 62%, 0.35);
+}
+
+.tp-cal-slot--mia-prenotazione .tp-cal-badge.is-open {
+    color: hsl(38deg, 92%, 42%);
+}
+
+.tp-cal-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.35rem;
+    border-radius: 3px;
+    /* Testo della sessione centrato: su più righe (es. "Amatoriale" / "2 liberi")
+       le righe restano centrate nella casella dell'ora invece di allinearsi a
+       sinistra. La centratura verticale è già data da vertical-align: middle
+       sulle celle e da align-items: center sul link della sessione. */
+    text-align: center;
+}
+
+.tp-cal-badge.is-open {
+    color: var(--bulma-primary);
+}
+
+.tp-cal-badge.is-closed {
+    color: var(--c-text-mut);
+}
+
+.tp-error-list {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.tp-bar-chart {
+    height: 0.75rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.tp-bar-chart.is-compact {
+    height: 0.5rem;
+    flex: 1;
+    min-width: 4rem;
+}
+
+.tp-bar-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.85);
+    transition: width 0.2s ease, filter 0.12s ease;
+}
+
+/* Evidenzia la riga puntata nelle liste a barre orizzontali (no JS). */
+.tp-chart-row:hover .tp-bar-fill { filter: brightness(1.18) saturate(1.1); }
+.tp-chart-row:hover .tp-chart-value { color: var(--bulma-text-strong); }
+
+.tp-bar-fill.is-accent {
+    background: hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 0.85);
+}
+
+.tp-chart-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.tp-chart-row {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr 3.5rem;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tp-chart-label,
+.tp-chart-value {
+    white-space: nowrap;
+}
+
+/* ----------------------------------------------------------------------------
+   Grafico combinato barre + linea (combo_chart): andamento prenotazioni/ricavi.
+   SVG inline, colori dai token di brand (barre = primario, linea = success).
+   -------------------------------------------------------------------------- */
+.tp-combo-chart {
+    margin: 0;
+}
+
+.tp-cc-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.tp-cc-grid {
+    stroke: var(--bulma-border-weak);
+    stroke-width: 1;
+}
+
+.tp-cc-tick {
+    fill: var(--bulma-text-weak);
+    font-size: 11px;
+}
+
+.tp-cc-tick-left { text-anchor: end; }
+.tp-cc-tick-right { text-anchor: start; }
+
+.tp-cc-axis-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.tp-cc-axis-title-left { text-anchor: start; fill: var(--tp-primary); }
+.tp-cc-axis-title-right { text-anchor: end; fill: var(--tp-success); }
+
+.tp-cc-month {
+    fill: var(--bulma-text-weak);
+    font-size: 12px;
+    text-anchor: middle;
+}
+
+.tp-cc-val-bar {
+    fill: var(--bulma-text-strong);
+    font-size: 12px;
+    font-weight: 700;
+    text-anchor: middle;
+}
+
+/* Valore della barra collocato sotto l'asse (tra colonna ed etichetta del mese) */
+.tp-cc-val-bar-below {
+    fill: var(--tp-primary);
+    font-size: 13px;
+}
+
+.tp-cc-line {
+    fill: none;
+    stroke: var(--tp-success);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tp-cc-dot {
+    fill: var(--tp-success);
+    stroke: var(--tp-surface-1);
+    stroke-width: 2;
+}
+
+.tp-cc-area { stroke: none; }
+
+.tp-cc-grad-bar-top { stop-color: var(--tp-primary); stop-opacity: 1; }
+.tp-cc-grad-bar-bottom { stop-color: var(--tp-primary); stop-opacity: 0.32; }
+.tp-cc-grad-area-top { stop-color: var(--tp-success); stop-opacity: 0.22; }
+.tp-cc-grad-area-bottom { stop-color: var(--tp-success); stop-opacity: 0; }
+
+.tp-cc-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 0.85rem;
+}
+
+.tp-cc-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: var(--fz-sm);
+    color: var(--bulma-text-weak);
+}
+
+.tp-cc-legend-swatch {
+    display: inline-block;
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 3px;
+}
+
+.tp-cc-legend-bar { background: var(--tp-primary); }
+
+.tp-cc-legend-line {
+    width: 1.15rem;
+    height: 0.3rem;
+    border-radius: 999px;
+    background: var(--tp-success);
+}
+
+/* -- Layer interattivo del combo chart (hover puro CSS, nessun JS) -------- */
+.tp-cc-hit {
+    fill: transparent;
+    pointer-events: all;
+    cursor: pointer;
+}
+
+.tp-cc-band {
+    fill: var(--tp-primary);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
+
+.tp-cc-col:hover .tp-cc-band { opacity: 0.07; }
+
+.tp-cc-guide {
+    stroke: var(--bulma-text-weak);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
+
+.tp-cc-col:hover .tp-cc-guide { opacity: 0.55; }
+
+.tp-cc-dot-halo {
+    fill: var(--tp-success);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
+
+.tp-cc-col:hover .tp-cc-dot-halo { opacity: 0.22; }
+
+.tp-cc-dot-hi {
+    fill: var(--tp-success);
+    stroke: var(--tp-surface-1);
+    stroke-width: 2;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
+
+.tp-cc-col:hover .tp-cc-dot-hi { opacity: 1; }
+
+.tp-cc-tip {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
+
+.tp-cc-col:hover .tp-cc-tip { opacity: 1; }
+
+.tp-cc-tip-bg {
+    fill: var(--tp-surface-3);
+    stroke: var(--bulma-border-weak);
+    stroke-width: 1;
+    filter: drop-shadow(0 5px 12px rgba(0, 0, 0, 0.4));
+}
+
+.tp-cc-tip-title {
+    fill: var(--bulma-text-strong);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.tp-cc-tip-row {
+    fill: var(--bulma-text);
+    font-size: 11.5px;
+}
+
+.tp-cc-tip-key-bar { fill: var(--tp-primary); }
+.tp-cc-tip-key-line { fill: var(--tp-success); }
+
+/* ----------------------------------------------------------------------------
+   Donut chart (donut_chart): composizioni "parte di un tutto".
+   SVG inline + legenda; hover puro CSS (nessun JavaScript).
+   -------------------------------------------------------------------------- */
+.tp-donut {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 0;
+}
+
+.tp-donut-figure {
+    flex: 0 0 auto;
+    width: 10.5rem;
+    max-width: 100%;
+}
+
+.tp-donut-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.tp-donut-track {
+    fill: none;
+    stroke: var(--bulma-border-weak);
+    stroke-width: 24;
+    opacity: 0.5;
+}
+
+.tp-donut-arc {
+    fill: none;
+    stroke: var(--seg);
+    stroke-width: 24;
+    transition: stroke-width 0.14s ease, opacity 0.14s ease;
+}
+
+.tp-donut-seg {
+    cursor: pointer;
+    transition: opacity 0.14s ease;
+}
+
+/* Al passaggio del mouse: sfuma tutti gli spicchi tranne quello puntato. */
+.tp-donut-segs:hover .tp-donut-seg { opacity: 0.35; }
+.tp-donut-segs:hover .tp-donut-seg:hover { opacity: 1; }
+.tp-donut-seg:hover .tp-donut-arc { stroke-width: 30; }
+
+/* Etichetta dinamica al centro: appare solo per lo spicchio puntato. */
+.tp-donut-cap {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.14s ease;
+}
+
+.tp-donut-seg:hover .tp-donut-cap { opacity: 1; }
+
+.tp-donut-cap-bg { fill: var(--tp-surface-1); }
+
+.tp-donut-total-value,
+.tp-donut-cap-pct {
+    fill: var(--bulma-text-strong);
+    font-size: 30px;
+    font-weight: 800;
+    text-anchor: middle;
+}
+
+.tp-donut-cap-pct { font-size: 26px; }
+
+.tp-donut-total-label,
+.tp-donut-cap-label {
+    fill: var(--bulma-text-weak);
+    font-size: 12px;
+    text-anchor: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.tp-donut-cap-label {
+    fill: var(--bulma-text);
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.tp-donut-cap-sub {
+    fill: var(--bulma-text-weak);
+    font-size: 11px;
+    text-anchor: middle;
+}
+
+.tp-donut-legend {
+    flex: 1 1 9rem;
+    min-width: 8rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.tp-donut-li {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 6px;
+    font-size: var(--fz-sm);
+    transition: background 0.12s ease;
+}
+
+.tp-donut-li:hover { background: var(--tp-surface-2); }
+
+.tp-donut-swatch {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 3px;
+    flex: 0 0 auto;
+}
+
+.tp-donut-li-label {
+    min-width: 0;
+    color: var(--bulma-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tp-donut-li-val {
+    font-weight: 700;
+    color: var(--bulma-text-strong);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-donut-li-pct {
+    min-width: 3.2rem;
+    text-align: right;
+    color: var(--bulma-text-weak);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Intestazione del grafico gestore: gruppo sinistro (titolo + selettore circuito)
+   e selettore periodo a destra. */
+.tp-cc-head {
+    align-items: center;
+}
+
+.tp-cc-head-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* "Modifica periodo" di una sanzione: disclosure <details> con summary a bottone. */
+.tp-sanzione-edit > summary {
+    list-style: none;
+    display: inline-flex;
+}
+.tp-sanzione-edit > summary::-webkit-details-marker { display: none; }
+.tp-sanzione-edit[open] > summary { margin-bottom: 0.5rem; }
+
+/* Colonna azioni dei provvedimenti: "Modifica periodo" (pannello a scomparsa) e
+   "Revoca" stanno nella stretta cella .actions, i cui vincoli (allineamento a
+   destra, nowrap, figli inline-block) schiacciavano il form. Qui li neutralizzo
+   solo per questa tabella e impagino i controlli in modo ordinato. */
+.tp-sanzioni-emesse .table td.actions {
+    white-space: normal;
+}
+
+.tp-sanzioni-emesse .table td.actions > .tp-sanzione-tools {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;   /* i due bottoni restano allineati a destra */
+    gap: 0.5rem;
+    width: 100%;
+    text-align: left;
+}
+
+.tp-sanzione-revoca {
+    margin: 0;
+}
+
+/* Pannello del form di modifica: box contenuto, etichette e campi impilati,
+   larghezza comoda e leggibile (la .table-wrap scorre se la colonna è stretta). */
+.tp-sanzione-edit-form {
+    width: 17rem;
+    max-width: 100%;
+    gap: 1.1rem;           /* aria tra la select provvedimento e "Fine sospensione" */
+    padding: 0.85rem;
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--tp-radius-md);
+    background: rgba(255, 255, 255, 0.025);
+    text-align: left;
+}
+
+.tp-sanzione-edit-form .help {
+    margin: 0;
+}
+
+.tp-sanzione-edit-form > .button {
+    align-self: stretch;   /* "Aggiorna periodo" a tutta larghezza del pannello */
+}
+
+/* Controlli del pannello più compatti: la select ban/sospensione e il campo
+   data "Fine sospensione" usano l'altezza piena di default; qui li rendo bassi.
+   La select non è più avvolta dal wrapper Bulma .select, così resta solo la
+   freccia SVG del select (niente doppia freccia). */
+.tp-sanzione-edit-form select:not([multiple]),
+.tp-sanzione-edit-form .input {
+    height: auto;
+    min-height: 0;
+    font-size: 0.8rem;
+    padding-top: 0.32rem;
+    padding-bottom: 0.32rem;
+    /* La larghezza 100% deve includere padding e bordo, così la select e il
+       campo data restano dentro al pannello invece di debordare a destra. */
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Selettore a tendina (pure HTML <details>) per circuito e finestra temporale. */
+.tp-cc-dd {
+    position: relative;
+}
+
+.tp-cc-dd-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.7rem;
+    font-size: var(--fz-xs);
+    color: var(--bulma-text-strong);
+    background: var(--tp-surface-3);
+    border: 1px solid var(--bulma-border-weak);
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    list-style: none;
+    user-select: none;
+}
+
+.tp-cc-dd-trigger::-webkit-details-marker { display: none; }
+
+.tp-cc-dd-trigger:hover {
+    border-color: var(--tp-primary);
+}
+
+.tp-cc-dd[open] .tp-cc-dd-trigger {
+    border-color: var(--tp-primary);
+}
+
+.tp-cc-dd-menu {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    z-index: 30;
+    min-width: 190px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 0.35rem;
+    background: var(--tp-surface-1, #fff);
+    border: 1px solid var(--bulma-border-weak);
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+}
+
+.tp-cc-dd--right .tp-cc-dd-menu {
+    left: auto;
+    right: 0;
+}
+
+.tp-cc-dd-opt {
+    display: block;
+    padding: 0.45rem 0.65rem;
+    font-size: var(--fz-sm);
+    color: var(--bulma-text-strong);
+    border-radius: 8px;
+    white-space: nowrap;
+}
+
+.tp-cc-dd-opt:hover {
+    background: var(--tp-surface-3);
+}
+
+.tp-cc-dd-opt.is-active {
+    color: var(--tp-primary);
+    font-weight: 600;
+    background: var(--tp-surface-3);
+}
+
+.tp-combo-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 2.5rem 1rem;
+    color: var(--bulma-text-weak);
+    text-align: center;
+}
+
+.tp-combo-empty svg { opacity: 0.5; }
+.tp-combo-empty p { margin: 0; font-size: var(--fz-sm); }
+
+/* -------- Pagina commissioni (admin) -------- */
+.tp-admin-commissioni .page-header.tp-admin-page-header {
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.tp-admin-commissioni .tp-admin-page-header-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.tp-admin-commissioni .page-header h1,
+.tp-admin-fatturazione .page-header h1 {
+    display: block;
+    margin: 0 0 0.35rem !important;
+    font-size: clamp(1.5rem, 3vw, 1.85rem);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--bulma-text);
+    letter-spacing: -0.02em;
+}
+
+/* Intestazioni sezione condivise (parametri + template) */
+.tp-admin-commissioni .tp-section-head,
+.tp-admin-fatturazione .tp-section-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem 1.5rem;
+    width: 100%;
+    margin-bottom: 1.25rem;
+}
+
+.tp-admin-commissioni .tp-section-head-text,
+.tp-admin-fatturazione .tp-section-head-text {
+    min-width: 0;
+}
+
+.tp-admin-commissioni .tp-section-eyebrow,
+.tp-admin-fatturazione .tp-section-eyebrow {
+    display: block;
+    margin: 0 0 0.35rem;
+    font-size: var(--fz-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: hsl(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l));
+}
+
+.tp-admin-commissioni .tp-section-title,
+.tp-admin-fatturazione .tp-section-title {
+    display: block;
+    margin: 0 0 0.35rem;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--bulma-text) !important;
+    text-transform: none;
+    letter-spacing: -0.01em;
+}
+
+.tp-admin-commissioni .tp-section-desc,
+.tp-admin-fatturazione .tp-section-desc {
+    margin: 0;
+    font-size: var(--fz-sm);
+    line-height: 1.5;
+    color: var(--bulma-text-weak);
+}
+
+.tp-commissioni-section {
+    margin-bottom: 0;
+}
+
+.tp-commissioni-badge {
+    flex-shrink: 0;
+    justify-self: end;
+    align-self: center;
+    font-size: 0.68rem;
+}
+
+.tp-commissioni-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: stretch;
+}
+
+.tp-commissioni-kpi {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    min-height: 100%;
+}
+
+.tp-commissioni-kpi-icon {
+    flex-shrink: 0;
+    line-height: 1;
+    padding-top: 0.2rem;
+}
+
+.tp-commissioni-kpi-icon .kpi-icon {
+    margin-bottom: 0;
+}
+
+.tp-commissioni-kpi-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.tp-commissioni-kpi .kpi-value {
+    color: var(--bulma-text);
+    line-height: 1.15;
+}
+
+.tp-commissioni-kpi .kpi-label {
+    margin-top: 0.25rem;
+}
+
+.tp-commissioni-charts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: stretch;
+}
+
+.tp-commissioni-stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    height: 100%;
+}
+
+.tp-commissioni-stat-caption {
+    margin: 0;
+    font-size: var(--fz-sm);
+    line-height: 1.45;
+    color: var(--bulma-text-weak);
+}
+
+.tp-commissioni-stat-value {
+    font-weight: 600;
+    color: var(--bulma-text);
+}
+
+.tp-commissioni-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.tp-commissioni-form-panel,
+.tp-commissioni-storico-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+    height: 100%;
+}
+
+.tp-commissioni-form {
+    max-width: none;
+    width: 100%;
+    margin-top: 0.25rem;
+}
+
+.tp-commissioni-form .form-row,
+.tp-commissioni-form .input {
+    width: 100%;
+}
+
+.tp-commissioni-form-confirm {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--bulma-border);
+}
+
+.tp-commissioni-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.tp-storico-block + .tp-storico-block {
+    margin-top: 0.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--bulma-border);
+}
+
+.tp-storico-empty {
+    margin: 0;
+    font-size: var(--fz-sm);
+    color: var(--bulma-text-weak);
+}
+
+.tp-admin-commissioni .tp-chart-label {
+    font-size: var(--fz-xs);
+    color: var(--bulma-text-weak);
+}
+
+.tp-admin-commissioni .tp-chart-value {
+    font-size: var(--fz-xs);
+    font-weight: 600;
+    color: var(--bulma-text);
+    text-align: right;
+}
+
+.tp-admin-commissioni .tp-storico-table-wrap {
+    border: none;
+    border-radius: 0;
+}
+
+.tp-admin-commissioni .tp-storico-table {
+    font-size: var(--fz-sm);
+    width: 100%;
+}
+
+.tp-admin-commissioni .tp-storico-table th {
+    font-size: var(--fz-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--bulma-text-weak);
+    padding-bottom: 0.5rem;
+    text-align: left;
+}
+
+.tp-admin-commissioni .tp-storico-table td {
+    color: var(--bulma-text);
+    vertical-align: middle;
+}
+
+.tp-admin-commissioni .tp-chart-row {
+    grid-template-columns: minmax(5rem, 6.5rem) minmax(0, 1fr) minmax(3.5rem, 4.5rem);
+    align-items: center;
+}
+
+/* -------- Sezione template fattura -------- */
+.tp-template-section {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--bulma-border);
+    scroll-margin-top: 5rem;
+}
+
+.tp-template-tabs {
+    flex: 0 0 auto;
+    justify-self: end;
+    align-self: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+}
+
+.tp-template-tab-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.tp-template-tab-group-label {
+    font-size: var(--fz-xs);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--bulma-text-weak);
+}
+
+.tp-template-layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: stretch;
+}
+
+.tp-template-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 100%;
+}
+
+.tp-template-panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+}
+
+.tp-template-badge {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+}
+
+.tp-template-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.25rem;
+    margin: 0;
+    padding: 0;
+}
+
+.tp-meta-item {
+    min-width: 0;
+}
+
+.tp-meta-item dt {
+    margin: 0 0 0.3rem;
+    font-size: var(--fz-xs);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--bulma-text-weak);
+}
+
+.tp-meta-item dd {
+    margin: 0;
+    font-size: var(--fz-sm);
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--bulma-text);
+    word-break: break-word;
+}
+
+.tp-code-inline {
+    display: inline-block;
+    max-width: 100%;
+    font-family: var(--bulma-family-code);
+    font-size: 0.72rem;
+    font-weight: 400;
+    line-height: 1.4;
+    color: hsl(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l));
+    background: hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 0.1);
+    border: 1px solid hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 0.22);
+    padding: 0.2rem 0.45rem;
+    border-radius: var(--bulma-radius-small);
+}
+
+.tp-template-upload-hint {
+    margin: 0;
+    font-size: var(--fz-sm);
+    line-height: 1.5;
+    color: var(--bulma-text-weak);
+}
+
+.tp-template-upload-hint strong {
+    color: var(--bulma-text);
+    font-weight: 600;
+}
+
+.tp-template-vars {
+    margin: 0 0 0.25rem;
+    padding-left: 1.1rem;
+    list-style: disc;
+    font-size: var(--fz-sm);
+    line-height: 1.5;
+    color: var(--bulma-text-weak);
+}
+
+.tp-template-vars li {
+    margin-bottom: 0.35rem;
+}
+
+.tp-template-vars li:last-child {
+    margin-bottom: 0;
+}
+
+.tp-template-upload {
+    margin-top: auto;
+    padding-top: 0.25rem;
+}
+
+.tp-file-input.input {
+    width: 100%;
+    max-width: 100%;
+}
+
+.tp-template-preview-card {
+    overflow: hidden;
+}
+
+.tp-template-preview-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.35rem 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.tp-template-preview-caption {
+    font-size: var(--fz-xs);
+    color: var(--bulma-text-weak);
+}
+
+.tp-template-preview-frame {
+    padding: 1.5rem;
+    border-radius: var(--bulma-radius);
+    background: hsl(220deg, 10%, 12%);
+    border: 1px solid var(--bulma-border);
+    overflow-x: auto;
+}
+
+.tp-template-preview-sheet {
+    isolation: isolate;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 2rem 2.25rem;
+    background: #fff !important;
+    color: #1a1a1a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.45;
+    border-radius: 2px;
+    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.4);
+}
+
+.tp-template-preview-sheet head,
+.tp-template-preview-sheet style {
+    display: none !important;
+}
+
+.tp-template-preview-sheet h1,
+.tp-template-preview-sheet h2,
+.tp-template-preview-sheet h3,
+.tp-template-preview-sheet p,
+.tp-template-preview-sheet td,
+.tp-template-preview-sheet th,
+.tp-template-preview-sheet li,
+.tp-template-preview-sheet span,
+.tp-template-preview-sheet strong,
+.tp-template-preview-sheet body {
+    color: #1a1a1a !important;
+}
+
+.tp-template-preview-sheet h1 {
+    font-size: 18pt;
+    margin: 0 0 4px;
+    font-weight: 700;
+}
+
+.tp-template-preview-sheet h2 {
+    font-size: 12pt;
+    margin: 1.25rem 0 0.5rem;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #ccc;
+    font-weight: 700;
+}
+
+.tp-template-preview-sheet .meta,
+.tp-template-preview-sheet td.lbl {
+    color: #555 !important;
+    font-size: 9pt;
+}
+
+/* La dicitura di chiusura va resa leggibile su fondo bianco, qualunque sia
+   l'annidamento del documento dentro il riquadro (scuro) di anteprima. */
+.tp-template-preview-frame .footer {
+    display: block;
+    background: #fff !important;
+    color: #1a1a1a !important;
+    font-size: 8pt;
+    margin-top: 2rem;
+    padding-top: 8px;
+}
+
+.tp-template-preview-sheet .totale {
+    font-size: 14pt;
+    font-weight: 700;
+}
+
+.tp-template-preview-sheet table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+}
+
+.tp-template-preview-sheet td {
+    padding: 5px 8px;
+    vertical-align: top;
+}
+
+.tp-template-preview-sheet .letterhead {
+    margin-bottom: 1rem;
+}
+
+.tp-template-preview-sheet .letterhead-logo {
+    height: 28px;
+    width: auto;
+}
+
+/* ============================================================================
+   Dashboard (pilota / gestore / noleggio / admin)
+   Banner di benvenuto, azioni rapide, mini-statistiche e liste.
+   ========================================================================== */
+.tp-dash-hero {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 1.75rem 1.85rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--tp-radius-panel);
+    background:
+        radial-gradient(circle at 88% 18%, hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.16), transparent 42%),
+        radial-gradient(circle at 8% 110%, hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 0.12), transparent 52%),
+        linear-gradient(180deg, hsl(215deg 14% 13%), hsl(215deg 16% 9%));
+}
+
+.tp-dash-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 56px);
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.tp-dash-hero-text {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+}
+
+.tp-dash-hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.5rem;
+    font-size: var(--fz-xs);
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: hsl(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l));
+}
+
+.tp-dash-hero h1 {
+    margin: 0 0 0.35rem !important;
+    font-size: clamp(1.5rem, 3vw, 2rem) !important;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    background: linear-gradient(180deg, #fff, #cfd6df);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.tp-dash-hero .lead {
+    margin: 0;
+    max-width: 46rem;
+    color: var(--bulma-text-weak);
+    font-size: var(--fz-md);
+    line-height: 1.5;
+}
+
+.tp-dash-hero-actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+/* Pannello a due colonne dashboard */
+.tp-dash-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: stretch;
+}
+
+.tp-dash-cols > .tp-dash-main,
+.tp-dash-cols > .card:first-child:not(:only-child) {
+    min-width: 0;
+}
+
+.tp-dash-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+    align-self: stretch;
+}
+
+.tp-dash-cols > .tp-dash-side {
+    height: 100%;
+}
+
+.tp-dash-cols > .card,
+.tp-dash-main {
+    display: flex;
+    flex-direction: column;
+}
+
+.tp-dash-cols > .card.tp-dash-main {
+    height: 100%;
+    min-height: 100%;
+}
+
+.tp-dash-main-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.tp-dash-cols > .card > .empty-state,
+.tp-dash-main-body > .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Variante compatta (home pilota): contiene l'altezza della card così lo
+   sguardo scorre subito verso la ricerca dei circuiti sottostante. */
+.tp-dash-main--compact .tp-dash-main-body {
+    max-height: 17rem;
+    overflow-y: auto;
+}
+
+.tp-dash-main--compact .tp-dash-main-body > .empty-state {
+    padding: 1.25rem 0.5rem;
+}
+
+.tp-dash-main--compact .tp-dash-main-body > .empty-state > svg {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 0.5rem;
+}
+
+/* Lista chiave/valore (profilo, riepiloghi) */
+.tp-kv-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.tp-kv-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--bulma-border);
+}
+
+.tp-kv-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.tp-kv-row:first-child {
+    padding-top: 0;
+}
+
+.tp-kv-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--fz-sm);
+    color: var(--bulma-text-weak);
+}
+
+.tp-kv-val {
+    font-weight: 600;
+    font-size: var(--fz-md);
+    text-align: right;
+    word-break: break-word;
+}
+
+/* Riga lista con avatar/etichetta + meta + valore a destra */
+.tp-feed-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.35rem 1rem;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--bulma-border);
+}
+
+.tp-feed-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.tp-feed-row:first-child {
+    padding-top: 0;
+}
+
+.tp-feed-title {
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.tp-feed-meta {
+    grid-column: 1 / 2;
+    font-size: var(--fz-xs);
+    color: var(--bulma-text-weak);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.tp-feed-aside {
+    grid-row: 1 / 3;
+    grid-column: 2 / 3;
+    text-align: right;
+    align-self: center;
+}
+
+.tp-feed-amount {
+    font-weight: 700;
+    color: hsl(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l));
+    white-space: nowrap;
+}
+
+/* KPI con accento variabile */
+.kpi.is-success::after {
+    background: radial-gradient(circle, hsla(152, 62%, 50%, 0.22), transparent 70%);
+}
+
+.kpi.is-success .kpi-icon {
+    color: var(--tp-success);
+}
+
+.kpi.is-accent::after {
+    background: radial-gradient(circle, hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 0.24), transparent 70%);
+}
+
+.kpi.is-accent .kpi-icon {
+    color: hsl(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l));
+}
+
+.kpi.is-danger::after {
+    background: radial-gradient(circle, hsla(355, 75%, 62%, 0.22), transparent 70%);
+}
+
+.kpi.is-danger .kpi-icon {
+    color: var(--tp-danger);
+}
+
+.kpi-trend {
+    margin-top: 0.4rem;
+    font-size: var(--fz-xs);
+    color: var(--bulma-text-weak);
+}
+
+/* Mini occupazione flotta */
+.tp-gauge-line {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.tp-gauge-line .tp-bar-chart {
+    flex: 1;
+}
+
+.tp-gauge-value {
+    font-size: var(--fz-sm);
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--bulma-text-weak);
+}
+
+.tp-card-link-row {
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--bulma-border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* ---------------------------------------------------------------------
+   Foto circuito — colonna descrizione/foto a destra del calendario,
+   uploader dinamico (aggiungi/rimuovi) e griglia foto in modifica.
+   --------------------------------------------------------------------- */
+
+/* Colonna foto (sinistra) della scheda circuito: descrizione + foto impilate.
+   Stessa spaziatura verticale (1.5rem) della colonna calendario/recapiti/veicoli
+   a fianco e del gutter tra le colonne, così i box risultano allineati. */
+.tp-cal-row > .tp-detail-side {
+    flex: 1 1 18rem;
+    width: auto;
+    min-width: 16rem;
+    max-width: 26rem;
+    gap: 1.5rem;
+}
+
+.tp-detail-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Ogni foto è una scheda separata, una sotto l'altra. */
+.tp-foto-card {
+    margin: 0;
+}
+
+.tp-foto-card img {
+    display: block;
+    width: 100%;
+    border-radius: var(--bulma-radius);
+    background: var(--bulma-scheme-main-bis);
+}
+
+.tp-foto-card figcaption {
+    margin-top: 0.5rem;
+}
+
+/* Uploader: righe file + nome descrittivo. */
+.tp-foto-uploader {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.tp-foto-uploader:empty {
+    display: none;
+}
+
+.tp-foto-upload-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tp-foto-upload-row input[type="file"] {
+    flex: 1 1 14rem;
+    min-width: 0;
+}
+
+.tp-foto-upload-row input[type="text"] {
+    flex: 2 1 16rem;
+    min-width: 0;
+}
+
+/* Foto esistenti nella schermata di modifica, con selezione di rimozione. */
+.tp-foto-edit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: 0.75rem;
+}
+
+.tp-foto-edit {
+    margin: 0;
+    padding: 0.5rem;
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--bulma-radius);
+    background: hsla(221, 14%, 12%, 0.5);
+}
+
+.tp-foto-edit img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--bulma-radius);
+    background: var(--bulma-scheme-main-bis);
+}
+
+.tp-foto-edit figcaption {
+    margin-top: 0.35rem;
+    word-break: break-word;
+}
+
+.tp-foto-remove-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--bulma-text-weak);
+    cursor: pointer;
+}
+
+/* ============================================================================
+   Selettore valuta (display-only) delle schermate di prenotazione
+   ========================================================================== */
+.tp-valuta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin: 0 0 1.25rem;
+}
+
+.tp-valuta-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--bulma-text-weak);
+}
+
+.tp-valuta-icon {
+    color: var(--tp-accent);
+}
+
+.tp-valuta-control {
+    min-width: 12.5rem;
+}
+
+/* Il select riusa lo stile globale di "form select" (vedi sopra) ma qui
+   non è dentro un <form>: replichiamo le proprietà chiave per coerenza. */
+.tp-valuta-select {
+    --tp-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239aa5b5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    background-color: var(--tp-surface-3);
+    background-image: var(--tp-select-chevron);
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    color: hsl(var(--bulma-text-h), var(--bulma-text-s), var(--bulma-input-color-l));
+    border: var(--bulma-input-border-width) var(--bulma-input-border-style) var(--bulma-input-border-color);
+    border-radius: var(--bulma-radius);
+    padding: 0.4rem 2.25rem 0.4rem 0.75rem;
+    font-family: inherit;
+    font-size: var(--bulma-size-normal);
+    line-height: var(--bulma-control-line-height);
+    cursor: pointer;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.tp-valuta-select:hover {
+    border-color: var(--bulma-input-hover-border-color);
+}
+
+.tp-valuta-select:focus {
+    border-color: var(--bulma-input-focus-border-color);
+    box-shadow: var(--bulma-input-focus-box-shadow);
+    outline: none;
+}
+
+/* Variante compatta usata sopra le tabelle (es. elenco prenotazioni). */
+.tp-valuta--inline {
+    margin-bottom: 0.75rem;
+}
+
+/* ============================================================================
+   Stato di errore dei campi (validazione client carta di credito ecc.)
+   ========================================================================== */
+.tp-field-error {
+    color: hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 1) !important;
+    font-weight: 600;
+}
+
+.form-row input[aria-invalid="true"] {
+    border-color: hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.8) !important;
+    box-shadow: 0 0 0 0.125em hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.25) !important;
+}
+
+/* ============================================================================
+   Documenti pilota (gestione account): righe stato + eliminazione
+   ========================================================================== */
+.tp-doc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.tp-doc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--bulma-border);
+}
+
+.tp-doc-row:last-of-type {
+    border-bottom: none;
+}
+
+.tp-doc-del {
+    margin: 0;
+    flex: 0 0 auto;
+}
