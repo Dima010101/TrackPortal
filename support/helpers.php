@@ -972,3 +972,23 @@ function flotta_qs(int $circuitoId, string $cat = ''): string
 
     return $cat !== '' ? $path . '?cat=' . rawurlencode($cat) : $path;
 }
+
+/** Estrae e svuota i flash message da mostrare. */
+function flash_all(): array
+{
+    $msgs = $_SESSION['_flash'] ?? [];
+    unset($_SESSION['_flash']);
+    return $msgs;
+}
+
+/** Abbreviazione italiana del mese da una stringa 'YYYY-MM' (es. '2026-01' → 'Gen'). */
+function mese_breve_it(string $ym): string
+{
+    static $mesi = [
+        1 => 'Gen', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'Mag', 6 => 'Giu',
+        7 => 'Lug', 8 => 'Ago', 9 => 'Set', 10 => 'Ott', 11 => 'Nov', 12 => 'Dic',
+    ];
+    $m = (int) substr($ym, 5, 2);
+
+    return $mesi[$m] ?? $ym;
+}
