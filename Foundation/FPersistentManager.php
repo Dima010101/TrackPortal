@@ -213,9 +213,9 @@ class FPersistentManager
             return \FCircuito::loadWithVeicoliCount($limit);
         }
 
-    public static function veicoloNoleggioLoadDisponibiliByCircuito(int $circuitoId, ?string $inizio = NULL, ?string $fine = NULL): array
+    public static function veicoloNoleggioLoadDisponibiliByCircuito(int $circuitoId, ?int $sessioneId = NULL): array
     {
-        return \FVeicoloNoleggio::loadDisponibiliByCircuito($circuitoId, $inizio, $fine);
+        return \FVeicoloNoleggio::loadDisponibiliByCircuito($circuitoId, $sessioneId);
     }
 
     public static function veicoloNoleggioLoadTopByCircuito(int $circuitoId, int $limit = 3): array
@@ -413,9 +413,9 @@ class FPersistentManager
         return \FSessione::loadById($id);
     }
 
-    public static function sessioneCountPrenotazioniAttive(int $circuitoId, string $inizio, string $fine): int
+    public static function sessioneCountPrenotazioniAttive(int $sessioneId): int
     {
-        return \FSessione::countPrenotazioniAttive($circuitoId, $inizio, $fine);
+        return \FSessione::countPrenotazioniAttive($sessioneId);
     }
 
     public static function veicoloNoleggioLoadById(int $id): ?array
@@ -428,9 +428,9 @@ class FPersistentManager
         return \FSanzionePilotaNoleggio::pilotaBloccatoSuAzienda($pilotaId, $aziendaId);
     }
 
-    public static function veicoloNoleggioPrenotatoInIntervallo(int $veicoloId, string $inizio, string $fine): bool
+    public static function veicoloNoleggioPrenotatoPerSessione(int $veicoloId, int $sessioneId): bool
     {
-        return \FVeicoloNoleggio::prenotatoInIntervallo($veicoloId, $inizio, $fine);
+        return \FVeicoloNoleggio::prenotatoPerSessione($veicoloId, $sessioneId);
     }
 
     public static function sanzionePilotaPilotaBloccatoSuCircuito(int $pilotaId, int $circuitoId): ?array
@@ -438,9 +438,9 @@ class FPersistentManager
         return \FSanzionePilota::pilotaBloccatoSuCircuito($pilotaId, $circuitoId);
     }
 
-    public static function sessionePilotaHaPrenotazioneAttiva(int $pilotaId, int $circuitoId, string $inizio, string $fine): bool
+    public static function sessionePilotaHaPrenotazioneAttiva(int $pilotaId, int $sessioneId): bool
     {
-        return \FSessione::pilotaHaPrenotazioneAttiva($pilotaId, $circuitoId, $inizio, $fine);
+        return \FSessione::pilotaHaPrenotazioneAttiva($pilotaId, $sessioneId);
     }
 
     public static function cartaCreditoLoadByPilota(int $pilotaId): array
@@ -468,9 +468,9 @@ class FPersistentManager
         \FNotifiche::prenotazioneCompletata($prenId, $pilotaId);
     }
 
-    public static function prenotazioneAssegnaBox(int $circuitoId, string $inizio, string $fine, int $numeroBoxCircuito, int $postiPerBox): int
+    public static function prenotazioneAssegnaBox(int $sessioneId, int $numeroBoxCircuito, int $postiPerBox): int
     {
-        return \FPrenotazione::assegnaBox($circuitoId, $inizio, $fine, $numeroBoxCircuito, $postiPerBox);
+        return \FPrenotazione::assegnaBox($sessioneId, $numeroBoxCircuito, $postiPerBox);
     }
 
     public static function cartaCreditoSalva(int $pilotaId, string $nomeTitolare, string $cognomeTitolare, string $numeroMasked, string $dataScadenza): int
@@ -548,9 +548,9 @@ class FPersistentManager
         return \FSessione::loadByCircuitoSlot($circuitoId, $data, $ora);
     }
 
-    public static function prenotazioneLoadBySessioneCircuito(int $circuitoId, string $inizio, string $fine): array
+    public static function prenotazioneLoadBySessione(int $sessioneId): array
     {
-        return \FPrenotazione::loadBySessioneCircuito($circuitoId, $inizio, $fine);
+        return \FPrenotazione::loadBySessione($sessioneId);
     }
 
     public static function sessioneLoadByIdForGestore(int $id, int $gestoreId): ?array
@@ -558,9 +558,9 @@ class FPersistentManager
         return \FSessione::loadByIdForGestore($id, $gestoreId);
     }
 
-    public static function prenotazioneLoadConfermateByIntervalloCircuito(int $circuitoId, string $inizio, string $fine): array
+    public static function prenotazioneLoadConfermateBySessione(int $sessioneId): array
     {
-        return \FPrenotazione::loadConfermateByIntervalloCircuito($circuitoId, $inizio, $fine);
+        return \FPrenotazione::loadConfermateBySessione($sessioneId);
     }
 
     public static function sessioneAnnulla(int $sessioneId, int $gestoreId, string $causa): int
@@ -571,16 +571,6 @@ class FPersistentManager
     public static function sessioneEsisteConflitto(int $circuitoId, string $inizio, string $fine, ?int $escludiSessioneId = NULL): bool
     {
         return \FSessione::esisteConflitto($circuitoId, $inizio, $fine, $escludiSessioneId);
-    }
-
-    public static function sessioneEsisteConflittoPrenotazione(int $circuitoId, string $inizio, string $fine): bool
-    {
-        return \FSessione::esisteConflittoPrenotazione($circuitoId, $inizio, $fine);
-    }
-
-    public static function sessioneEsisteConflittoPrenotazioneEscludendoIntervallo(int $circuitoId, string $inizio, string $fine, string $escludiInizio, string $escludiFine): bool
-    {
-        return \FSessione::esisteConflittoPrenotazioneEscludendoIntervallo($circuitoId, $inizio, $fine, $escludiInizio, $escludiFine);
     }
 
     public static function cambioValutaInEuro(float $importo, string $valuta): float

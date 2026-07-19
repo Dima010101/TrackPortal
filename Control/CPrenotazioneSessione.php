@@ -141,7 +141,7 @@ class CPrenotazioneSessione
             $errors[] = $errore;
         }
 
-        self::mostraElencoNoleggio($sessione, $circuito, self::veicoliDisponibiliIntervallo($state ?? []), $errors, $state);
+        self::mostraElencoNoleggio($sessione, $circuito, self::veicoliDisponibiliState($state ?? []), $errors, $state);
     }
 
     /** POST — elabora pagamento, salva prenotazione e mostra conferma finale (4a/4b). */
@@ -311,7 +311,7 @@ class CPrenotazioneSessione
         if (!in_array($modalita, ['proprio', 'noleggio'], true)) {
             return ['Modalità di partecipazione non valida.'];
         }
-        if ($modalita === 'noleggio' && self::veicoliDisponibiliIntervallo($state ?? []) === []) {
+        if ($modalita === 'noleggio' && self::veicoliDisponibiliState($state ?? []) === []) {
             return ['Nessun veicolo a noleggio disponibile per questo circuito nella fascia oraria della sessione.'];
         }
 
@@ -364,14 +364,10 @@ class CPrenotazioneSessione
 
     private static function postiOccupati(ESessione $sessione): int
     {
-        return FPersistentManager::sessioneCountPrenotazioniAttive(
-            $sessione->getCircuitoId(),
-            $sessione->getInizio(),
-            $sessione->getFine()
-        );
+        return FPersistentManager::sessioneCountPrenotazioniAttive((int) $sessione->getId());
     }
 
-    /** Veicoli a noleggio liberi nella fascia della sessione. */
+    /** Veicoli a noleggio liberi per la sessione. */
     private static function veicoliDisponibili(?ESessione $sessione): array
     {
         if ($sessione === null) {
@@ -380,17 +376,15 @@ class CPrenotazioneSessione
 
         return FPersistentManager::veicoloNoleggioLoadDisponibiliByCircuito(
             $sessione->getCircuitoId(),
-            $sessione->getInizio(),
-            $sessione->getFine()
+            (int) $sessione->getId()
         );
     }
 
-    private static function veicoliDisponibiliIntervallo(array $state): array
+    private static function veicoliDisponibiliState(array $state): array
     {
         return FPersistentManager::veicoloNoleggioLoadDisponibiliByCircuito(
             (int) ($state['circuito_id'] ?? 0),
-            (string) ($state['inizio_sessione'] ?? ''),
-            (string) ($state['fine_sessione'] ?? '')
+            (int) ($state['sessione_id'] ?? 0)
         );
     }
 
@@ -447,12 +441,11 @@ class CPrenotazioneSessione
             return self::messaggioSanzione($sanzione, true);
         }
 
-        if (FPersistentManager::veicoloNoleggioPrenotatoInIntervallo(
+        if (FPersistentManager::veicoloNoleggioPrenotatoPerSessione(
             (int) $veicolo['id'],
-            (string) ($state['inizio_sessione'] ?? ''),
-            (string) ($state['fine_sessione'] ?? '')
+            (int) ($state['sessione_id'] ?? 0)
         )) {
-            return 'Il veicolo selezionato è già prenotato per la fascia oraria della sessione.';
+            return 'Il veicolo selezionato è già prenotato per questa sessione.';
         }
 
         $vcat = (string) ($veicolo['categoria'] ?? '');
@@ -519,12 +512,7 @@ class CPrenotazioneSessione
             return 'La sessione è scaduta e non può più essere prenotata.';
         }
 
-        if (FPersistentManager::sessionePilotaHaPrenotazioneAttiva(
-            $pilotaId,
-            $sessione->getCircuitoId(),
-            $sessione->getInizio(),
-            $sessione->getFine()
-        )) {
+        if (FPersistentManager::sessionePilotaHaPrenotazioneAttiva($pilotaId, (int) $sessione->getId())) {
             return 'Hai già una prenotazione attiva per questa sessione.';
         }
 
@@ -708,9 +696,7 @@ class CPrenotazioneSessione
             $sessione = self::sessioneBloccataPerPrenotazione((int) $state['sessione_id'], (int) $user['id']);
 
             $boxAssegnato = FPersistentManager::prenotazioneAssegnaBox(
-                (int) $state['circuito_id'],
-                (string) $state['inizio_sessione'],
-                (string) $state['fine_sessione'],
+                (int) $sessione->getId(),
                 (int) ($circuito['numero_box'] ?? 0),
                 $sessione->getPostiPerBox()
             );
@@ -789,8 +775,8 @@ class CPrenotazioneSessione
         if ($sanzione !== null) {
             throw new RuntimeException(self::messaggioSanzione($sanzione, true));
         }
-        if (FPersistentManager::veicoloNoleggioPrenotatoInIntervallo($veicoloId, (string) $state['inizio_sessione'], (string) $state['fine_sessione'])) {
-            throw new RuntimeException('Veicolo già prenotato per la fascia oraria selezionata.');
+        if (FPersistentManager::veicoloNoleggioPrenotatoPerSessione($veicoloId, (int) ($state['sessione_id'] ?? 0))) {
+            throw new RuntimeException('Veicolo già prenotato per questa sessione.');
         }
 
         return $veicolo;
@@ -842,8 +828,7 @@ class CPrenotazioneSessione
         $modalita            = (string) ($state['modalita'] ?? '');
 
         $pren = new EPrenotazione(
-            (int) $user['id'], (int) $state['circuito_id'],
-            (string) $state['inizio_sessione'], (string) $state['fine_sessione'], $boxAssegnato,
+            (int) $user['id'], (int) $state['sessione_id'], $boxAssegnato,
             $modalita === 'noleggio' ? (int) $state['veicolo_id'] : null,
             $modalita === 'proprio' ? strtoupper((string) $state['targa']) : null,
             $assicurazione, $prezzo, 'EUR', 'confermata', $codice,

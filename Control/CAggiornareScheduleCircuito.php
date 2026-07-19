@@ -50,7 +50,7 @@ class CAggiornareScheduleCircuito
             $errors,
             (int) get('settimana', '0'),
             [],
-            self::prenotazioniIntervallo($sessione),
+            self::prenotazioniSessione($sessione),
             self::idsPilotiSanzionabili($gestoreId)
         );
     }
@@ -127,10 +127,9 @@ class CAggiornareScheduleCircuito
     }
 
     /**
-     * carica lo slot della sessione richiesto.
-     * Lo slot va bloccato solo se è prenotato ma non esiste una sessione da
-     * gestire: una sessione con prenotazioni deve restare apribile per poterla
-     * modificare o annullare*/
+     * carica lo slot della sessione richiesto (null se lo slot è libero:
+     * ogni prenotazione appartiene a una sessione, non esistono slot
+     * prenotati senza sessione da gestire) */
     private static function caricaSlot(int $circuitoId, int $gestoreId, string $data, string $ora): array
     {
         $parsed = self::parseDataOra($data, $ora);
@@ -142,26 +141,18 @@ class CAggiornareScheduleCircuito
         }
 
         [$data, $ora] = $parsed;
-        $sessione     = FPersistentManager::sessioneLoadByCircuitoSlot($circuitoId, $data, $ora);
-        if ($sessione === null && self::slotBloccato($circuitoId, $data, $ora)) {
-            return [null, ['Lo slot selezionato è già occupato da una prenotazione.'], $data, $ora];
-        }
 
-        return [$sessione, [], $data, $ora];
+        return [FPersistentManager::sessioneLoadByCircuitoSlot($circuitoId, $data, $ora), [], $data, $ora];
     }
 
-    /** Prenotazioni sull'intervallo della sessione (vuoto se lo slot è libero)  */
-    private static function prenotazioniIntervallo(?array $sessione): array
+    /** Prenotazioni della sessione (vuoto se lo slot è libero)  */
+    private static function prenotazioniSessione(?array $sessione): array
     {
         if ($sessione === null) {
             return [];
         }
 
-        return FPersistentManager::prenotazioneLoadBySessioneCircuito(
-            (int) $sessione['circuito_id'],
-            (string) $sessione['inizio'],
-            (string) $sessione['fine']
-        );
+        return FPersistentManager::prenotazioneLoadBySessione((int) $sessione['id']);
     }
 
     /** Ripropone la scheda sessione con i dati inviati e gli errori */
@@ -178,7 +169,7 @@ class CAggiornareScheduleCircuito
             $errors,
             (int) ($dati['settimana'] ?? 0),
             $dati,
-            self::prenotazioniIntervallo($sessioneRow),
+            self::prenotazioniSessione($sessioneRow),
             self::idsPilotiSanzionabili($gestoreId)
         );
     }
@@ -214,14 +205,10 @@ class CAggiornareScheduleCircuito
         return $sessioneRow;
     }
 
-    /**traduce la sessionne nella terna circuito, inizio, fine per far vedere chi verrà rimborsato  */
+    /** piloti con prenotazione confermata sulla sessione, per far vedere chi verrà rimborsato */
     private static function pilotiConfermati(array $sessioneRow): array
     {
-        return FPersistentManager::prenotazioneLoadConfermateByIntervalloCircuito(
-            (int) $sessioneRow['circuito_id'],
-            (string) $sessioneRow['inizio'],
-            (string) $sessioneRow['fine']
-        );
+        return FPersistentManager::prenotazioneLoadConfermateBySessione((int) $sessioneRow['id']);
     }
 
     /** mapping degli errori quando si va a fare l'annullamento (per verificare che la richiesta sia legittima)*/
@@ -411,9 +398,6 @@ class CAggiornareScheduleCircuito
         if ($sessioneId > 0) {
             return array_merge($errors, self::erroriModificaSessione($dati, $gestoreId, $sessioneId, $inizio, $fine));
         }
-        if (FPersistentManager::sessioneEsisteConflittoPrenotazione((int) $dati['circuito_id'], $inizio, $fine)) {
-            $errors[] = 'Intervallo in conflitto con una prenotazione attiva.';
-        }
 
         return $errors;
     }
@@ -426,20 +410,9 @@ class CAggiornareScheduleCircuito
             return ['Sessione non trovata o non di tua proprietà.'];
         }
 
-        $prenotate = FPersistentManager::sessioneCountPrenotazioniAttive(
-            (int) $dati['circuito_id'],
-            (string) $originale['inizio'],
-            (string) $originale['fine']
-        );
-        $errors = self::erroriVincoliPrenotazioni($dati, $originale, $prenotate, $inizio, $fine);
+        $prenotate = FPersistentManager::sessioneCountPrenotazioniAttive($sessioneId);
 
-        if (FPersistentManager::sessioneEsisteConflittoPrenotazioneEscludendoIntervallo(
-            (int) $dati['circuito_id'], $inizio, $fine, (string) $originale['inizio'], (string) $originale['fine']
-        )) {
-            $errors[] = 'Il nuovo intervallo è in conflitto con prenotazioni di un\'altra sessione.';
-        }
-
-        return $errors;
+        return self::erroriVincoliPrenotazioni($dati, $originale, $prenotate, $inizio, $fine);
     }
 
     /** test che i vincoli siano rispettati in base alle prenotazioni attive*/
@@ -519,14 +492,5 @@ class CAggiornareScheduleCircuito
         }
 
         return [$data, $ora];
-    }
-
-    /** verifica se lo slot è già occupato da una prenotazione attiva */
-    private static function slotBloccato(int $circuitoId, string $data, string $ora): bool
-    {
-        $inizio = $data . ' ' . $ora . ':00';
-        $fine   = (new DateTimeImmutable($inizio))->modify('+1 hour')->format('Y-m-d H:i:s');
-
-        return FPersistentManager::sessioneEsisteConflittoPrenotazione($circuitoId, $inizio, $fine);
     }
 }
