@@ -7,7 +7,6 @@ class FFatturazione
 {
     // Trattamenti IVA speciali — default, da validare fiscalmente.
     private const ASSICURAZIONE_NATURA = 'N4';   // esente art. 10 DPR 633/72
-    private const PENALE_NATURA        = 'N2.2';  // penale risarcitoria fuori campo (art. 15)
     private const BOLLO_SOGLIA         = 77.47;
     private const BOLLO_IMPORTO        = 2.00;
 
