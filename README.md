@@ -36,7 +36,7 @@ cache con **Symfony Cache**.
 
 ### Configurazione
 
-`index.php` e `seed.php` caricano `C:/xampp/Trackportal-config/config.php`,
+`index.php` e `seed.php` caricano `/Trackportal-config/config.php`,
 che deve definire le costanti usate dall'applicazione:
 
 | Gruppo    | Costanti                                                                                                          |
