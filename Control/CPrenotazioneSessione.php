@@ -204,8 +204,6 @@ class CPrenotazioneSessione
 
     /**
      * Carica sessione + circuito e verifica la prenotabilità.
-     *
-     * @return array{0: ?ESessione, 1: ?array<string, mixed>, 2: list<string>}
      */
     private static function caricaSessioneCircuito(int $sessioneId, int $pilotaId): array
     {
@@ -227,8 +225,6 @@ class CPrenotazioneSessione
     /**
      * Contesto degli step dopo la scelta modalità: lo stato in sessione deve
      * esistere ed essere nel ramo atteso (proprio/noleggio).
-     *
-     * @return array{0: ?ESessione, 1: ?array<string, mixed>, 2: list<string>}
      */
     private static function contestoModalita(?array $state, string $modalita, int $pilotaId, string $msgFuoriFlusso): array
     {
@@ -242,8 +238,6 @@ class CPrenotazioneSessione
     /**
      * Contesto del pagamento: oltre alla sessione servono i dati del veicolo
      * del ramo corrente (targa o veicolo a noleggio).
-     *
-     * @return array{0: ?ESessione, 1: ?array<string, mixed>, 2: list<string>}
      */
     private static function contestoPagamento(?array $state, int $pilotaId): array
     {
@@ -737,8 +731,6 @@ class CPrenotazioneSessione
     /**
      * Importi base (tariffa della sessione letta sotto lock + eventuale
      * noleggio): [prezzo base, importo noleggio].
-     *
-     * @return array{0: float, 1: float}
      */
     private static function importiBase(ESessione $sessione, array $state, array $circuito, int $pilotaId): array
     {
@@ -815,8 +807,6 @@ class CPrenotazioneSessione
     /**
      * Costruisce e salva la prenotazione («confermata»), con lo scorporo degli
      * imponibili delegato al Model; ritorna il codice.
-     *
-     * @param array{promozione: ?EPromozione, sconto: float} $promoInfo
      */
     private static function persistiPrenotazione(array $user, array $state, array $datiPagamento, int $boxAssegnato, float $prezzoBase, float $importoNoleggio, array $promoInfo): string
     {
@@ -844,8 +834,6 @@ class CPrenotazioneSessione
     /**
      * Sceglie la promozione migliore: carica le candidate e delega al Model
      * applicabilità e calcolo dello sconto.
-     *
-     * @return array{promozione: ?EPromozione, sconto: float}
      */
     private static function trovaPromozioneAutomatica(int $pilotaId, int $circuitoId, ?int $veicoloId, float $baseImporto): array
     {
